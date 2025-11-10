@@ -24,7 +24,7 @@ import org.photonvision.PhotonCamera
 import org.photonvision.PhotonPoseEstimator
 
 
-object SwerveDriveSubsystem :  Drivetrain() {
+class SwerveDriveSubsystem :  Drivetrain() {
     // Constants
 
     private val MAX_SPEED = MetersPerSecond.of(4.8)
