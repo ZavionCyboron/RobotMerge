@@ -51,7 +51,7 @@ object RobotContainer {
 
     init {
         println("=== DigiMXP Robot Selector ===")
-        println("MXP DIO10 state: ${robotSelectSwitch.get()}")
+        println("MXP DIO19 state: ${robotSelectSwitch.get()}")
         println("Selected Robot Type: $robotType")
         SmartDashboard.putString("Selected Robot Type", robotType.name)
 
