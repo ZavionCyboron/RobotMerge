@@ -25,9 +25,6 @@ import org.hangar84.robot2026.commands.DriveCommand
 */
 object RobotContainer {
 
-    private val SwerveDrive : SwerveDriveSubsystem = SwerveDriveSubsystem()
-    private val MecanumDrive: MecanumDriveSubsystem = MecanumDriveSubsystem()
-
     private val robotSelectSwitch = DigitalInput(9)
 
     private val robotType: RobotType = if (robotSelectSwitch.get()) {
@@ -38,8 +35,8 @@ object RobotContainer {
 
     // The robot's subsystems
     private val drivetrain: Drivetrain = when (robotType) {
-        RobotType.SWERVE -> SwerveDrive
-        RobotType.MECANUM -> MecanumDrive
+        RobotType.SWERVE -> SwerveDriveSubsystem()
+        RobotType.MECANUM -> MecanumDriveSubsystem()
     }
     // The driver's controller
     private val controller: CommandXboxController = CommandXboxController(0)
