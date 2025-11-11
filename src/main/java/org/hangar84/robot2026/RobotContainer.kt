@@ -37,7 +37,6 @@ object RobotContainer {
     private val drivetrain: Drivetrain = when (robotType) {
         RobotType.SWERVE -> SwerveDriveSubsystem()
         RobotType.MECANUM -> MecanumDriveSubsystem()
-        else -> SwerveDriveSubsystem()
     }
     // The driver's controller
     private val controller: CommandXboxController = CommandXboxController(0)
