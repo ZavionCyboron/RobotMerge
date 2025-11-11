@@ -28,7 +28,7 @@ object RobotContainer {
     private val SwerveDrive : SwerveDriveSubsystem = SwerveDriveSubsystem()
     private val MecanumDrive: MecanumDriveSubsystem = MecanumDriveSubsystem()
 
-    private val robotSelectSwitch = DigitalInput(19)
+    private val robotSelectSwitch = DigitalInput(9)
 
     private val robotType: RobotType = if (robotSelectSwitch.get()) {
         RobotType.SWERVE
@@ -51,7 +51,7 @@ object RobotContainer {
 
     init {
         println("=== DigiMXP Robot Selector ===")
-        println("MXP DIO19 state: ${robotSelectSwitch.get()}")
+        println("MXP DIO9 state: ${robotSelectSwitch.get()}")
         println("Selected Robot Type: $robotType")
         SmartDashboard.putString("Selected Robot Type", robotType.name)
 
