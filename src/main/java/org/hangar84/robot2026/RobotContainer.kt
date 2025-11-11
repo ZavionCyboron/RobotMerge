@@ -15,6 +15,7 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController
 import org.hangar84.robot2026.constants.RobotType
 import org.hangar84.robot2026.subsystems.*
 import org.hangar84.robot2026.commands.DriveCommand
+import org.hangar84.robot2026.constants.Constants
 
 
 /*
@@ -24,19 +25,20 @@ import org.hangar84.robot2026.commands.DriveCommand
 * (including subsystems, commands, and button mappings) should be declared here.
 */
 object RobotContainer {
-
-    private val robotSelectSwitch = DigitalInput(9)
-
-    private val robotType: RobotType = if (robotSelectSwitch.get()) {
+    private var driveSubsystem = MecanumDriveSubsystem.Motors
+    private val robotType : RobotType = if (SwerveDriveSubsystem.Motors == driveSubsystem){
         RobotType.SWERVE
-    } else {
+    } else if (MecanumDriveSubsystem.Motors == driveSubsystem) {
         RobotType.MECANUM
+    } else {
+        RobotType.SWERVE
     }
 
     // The robot's subsystems
     private val drivetrain: Drivetrain = when (robotType) {
         RobotType.SWERVE -> SwerveDriveSubsystem()
         RobotType.MECANUM -> MecanumDriveSubsystem()
+        else -> SwerveDriveSubsystem()
     }
     // The driver's controller
     private val controller: CommandXboxController = CommandXboxController(0)
@@ -47,8 +49,6 @@ object RobotContainer {
         get() = autoChooser?.selected ?: InstantCommand()
 
     init {
-        println("=== DigiMXP Robot Selector ===")
-        println("MXP DIO9 state: ${robotSelectSwitch.get()}")
         println("Selected Robot Type: $robotType")
         SmartDashboard.putString("Selected Robot Type", robotType.name)
 
