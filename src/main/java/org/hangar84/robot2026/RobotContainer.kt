@@ -27,64 +27,42 @@ import org.hangar84.robot2026.constants.Constants
 object RobotContainer {
     private val buttonA = DigitalInput(9)
 
-    private val robotType: RobotType = if (buttonA.get()) {
+    private val robotType: RobotType
+        get() = if (buttonA.get()) {
         RobotType.SWERVE
     } else {
         RobotType.MECANUM
     }
 
     // The robot's subsystems
-    private val drivetrain: Drivetrain = when (robotType) {
+    private val drivetrain: Drivetrain
+        get() = when (robotType) {
         RobotType.SWERVE -> SwerveDriveSubsystem()
         RobotType.MECANUM -> MecanumDriveSubsystem()
         else -> SwerveDriveSubsystem()
     }
     // The driver's controller
     private val controller: CommandXboxController = CommandXboxController(0)
+    private var autoChooser: SendableChooser<Command> = SwerveDriveSubsystem().buildAutoChooser()
 
-    var autoChooser: SendableChooser<Command>? = null
+
 
     val autonomousCommand: Command
-        get() = autoChooser?.selected ?: InstantCommand()
+        get() = autoChooser.selected ?: InstantCommand()
 
     init {
-        println("Selected Robot Type: $robotType")
+        updateAutoChooser()
         SmartDashboard.putString("Selected Robot Type", robotType.name)
-
+        SmartDashboard.putData("Auto Chooser", autoChooser)
         configureBindings()
 
-        /*AutoBuilder.configure(
-            // poseSupplier =
-            { SwerveDriveSubsystem.poseEstimator.estimatedPosition },
-            // resetPose =
-            SwerveDriveSubsystem.poseEstimator::resetPose,
-            // IntelliJ is off its rocker here. The spread operator works here, is practically required, and compiles.
-            // The following error should be ignored, since there is no way to remove/hide it.
-            // robotRelativeSpeedsSupplier =
-            { SwerveDriveSubsystem.kinematics.toChassisSpeeds(*SwerveDriveSubsystem.allModuleStates) },
-            // output =
-            SwerveDriveSubsystem::driveRelative,
-            // controller =
-            PPHolonomicDriveController(
-                // translationConstants =
-                PIDConstants(5.0, 0.0, 0.0),
-                // rotationConstants =
-                PIDConstants(5.0, 0.0, 0.0),
-            ),
-            // robotConfig =
-            try {
-                RobotConfig.fromGUISettings()
-            } catch (_: Exception) {
-                null
-            },
-            // shouldFlipPath =
-            { DriverStation.getAlliance()?.get() == DriverStation.Alliance.Red },
-            // ...driveRequirements =
-            SwerveDriveSubsystem,
-        )
+    }
 
-        autoChooser = AutoBuilder.buildAutoChooser()
-        SmartDashboard.putData("Autonomous Routine", autoChooser)*/
+    private fun updateAutoChooser() {
+        autoChooser = when (robotType) {
+            RobotType.SWERVE -> SwerveDriveSubsystem().buildAutoChooser()
+            RobotType.MECANUM -> MecanumDriveSubsystem().buildAutoChooser()
+        }
     }
 
     private fun configureBindings() {
@@ -95,10 +73,15 @@ object RobotContainer {
             { controller.rightX }
         )
 
-        // Park on left bumper
-        /*
-        *Only uncomment if Swerve is active
-        * controller.leftBumper().whileTrue(SwerveDriveSubsystem.park())
-         */
+
+        val park = if (robotType == RobotType.SWERVE) {
+            controller.leftBumper().whileTrue(SwerveDriveSubsystem().PARK_COMMAND)
+        } else {
+            null
+        }
+        park
+
+        controller.leftBumper().onTrue(LauncherSubsystem.INTAKE_COMMAND).onFalse(LauncherSubsystem.STOP_COMMAND)
+        controller.rightBumper().onTrue(LauncherSubsystem.LAUNCH_COMMAND).onFalse(LauncherSubsystem.STOP_COMMAND)
     }
 }
