@@ -8,8 +8,8 @@ import com.revrobotics.spark.config.SparkMaxConfig
 import edu.wpi.first.wpilibj2.command.Subsystem
 
 object LauncherSubsystem : Subsystem {
-    private val leftController = SparkMax(13, MotorType.kBrushless)
-    private val rightController = SparkMax(14, MotorType.kBrushless)
+    private val leftController = SparkMax(9, MotorType.kBrushed)
+    private val rightController = SparkMax(10, MotorType.kBrushed)
 
     // - Commands -
     internal val LAUNCH_COMMAND
@@ -26,9 +26,5 @@ object LauncherSubsystem : Subsystem {
         rightMotorConfig.follow(leftController)
         rightMotorConfig.inverted(true)
         rightController.configure(rightMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters)
-    }
-
-    fun throttledLaunch(throttle: Double) {
-        leftController.set(throttle)
     }
 }
