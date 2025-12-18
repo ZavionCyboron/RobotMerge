@@ -4,6 +4,7 @@ import com.pathplanner.lib.auto.AutoBuilder
 import com.pathplanner.lib.config.PIDConstants
 import com.pathplanner.lib.config.RobotConfig
 import com.pathplanner.lib.controllers.PPHolonomicDriveController
+import com.revrobotics.spark.config.SparkMaxConfig
 import edu.wpi.first.apriltag.AprilTagFieldLayout
 import edu.wpi.first.apriltag.AprilTagFields
 import edu.wpi.first.hal.FRCNetComm.tInstances
@@ -19,9 +20,12 @@ import edu.wpi.first.wpilibj.ADIS16470_IMU.IMUAxis
 import edu.wpi.first.wpilibj.DriverStation
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser
 import edu.wpi.first.wpilibj2.command.Command
+import org.hangar84.robot2026.RobotContainer
 import org.hangar84.robot2026.constants.Constants.Swerve
+import org.hangar84.robot2026.constants.RobotType
 import org.hangar84.robot2026.swerve.MAXSwerveModule
-import org.hangar84.robot2026.swerve.SwerveConfigs
+import org.hangar84.robot2026.swerve.SwerveConfigs.drivingConfig
+import org.hangar84.robot2026.swerve.SwerveConfigs.turningConfig
 import org.photonvision.EstimatedRobotPose
 import org.photonvision.PhotonCamera
 import org.photonvision.PhotonPoseEstimator
@@ -32,59 +36,68 @@ import kotlin.jvm.optionals.getOrNull
 object SwerveDriveSubsystem :  Drivetrain() {
     // Constants
 
-    private val MAX_SPEED = MetersPerSecond.of(4.8)
-    private val MAX_ANGULAR_SPEED = RotationsPerSecond.of(1.0)
+    internal val MAX_SPEED = MetersPerSecond.of(4.8)
+    internal val MAX_ANGULAR_SPEED = RotationsPerSecond.of(1.0)
     private val WHEEL_BASE = Inches.of(24.0)
     private val TRACK_WIDTH = Inches.of(24.5)
+
+    private val rearRightDrivingConfig = SparkMaxConfig().apply {
+        apply(drivingConfig)
+        inverted(true)
+    }
+
+    private val enabled = RobotContainer.robotType == RobotType.SWERVE
 
 
 
     // Create MAXSwerveModules
-    val frontLeft: MAXSwerveModule = MAXSwerveModule(
+    val frontLeft: MAXSwerveModule? = if (enabled) {MAXSwerveModule(
         Swerve.FRONT_LEFT_DRIVING_ID,
         Swerve.FRONT_LEFT_TURNING_ID,
         Degrees.of(270.0),
-        SwerveConfigs.drivingConfig,
-        SwerveConfigs.turningConfig
-    )
+        drivingConfig,
+        turningConfig
+    )} else null
 
-    val frontRight: MAXSwerveModule = MAXSwerveModule(
+
+    val frontRight: MAXSwerveModule? = if(enabled) {MAXSwerveModule(
         Swerve.FRONT_RIGHT_DRIVING_ID,
         Swerve.FRONT_RIGHT_TURNING_ID,
         Degrees.of(0.0),
-        SwerveConfigs.drivingConfig,
-        SwerveConfigs.turningConfig
-    )
+        drivingConfig,
+        turningConfig
+    )} else null
 
-    val rearLeft: MAXSwerveModule = MAXSwerveModule(
+    val rearLeft: MAXSwerveModule? = if(enabled) {MAXSwerveModule(
         Swerve.REAR_LEFT_DRIVING_ID,
         Swerve.REAR_LEFT_TURNING_ID,
         Degrees.of(180.0),
-        SwerveConfigs.drivingConfig,
-        SwerveConfigs.turningConfig
-    )
+        drivingConfig,
+        turningConfig
+    )} else null
 
-    val rearRight: MAXSwerveModule = MAXSwerveModule(
+    val rearRight: MAXSwerveModule? = if(enabled) {MAXSwerveModule(
         Swerve.REAR_RIGHT_DRIVING_ID,
         Swerve.REAR_RIGHT_TURNING_ID,
         Degrees.of(90.0),
-        SwerveConfigs.drivingConfig,
-        SwerveConfigs.turningConfig
-    )
+        rearRightDrivingConfig,
+        turningConfig
+    )} else null
+
 
     // The gyro sensor
 
     private val allModules
-        get() = arrayOf(frontLeft, frontRight, rearLeft, rearRight)
+        get() = if (!enabled) emptyArray() else arrayOf(frontLeft!!, frontRight!!, rearLeft!!, rearRight!!)
     private val allModulePositions: Array<SwerveModulePosition>
         get() = allModules.map { it.position }.toTypedArray()
     private val allModuleStates: Array<SwerveModuleState>
         get() = allModules.map { it.state }.toTypedArray()
     // -- Sensors --
 
-    private val imu = ADIS16470_IMU()
+    private val imu = if (enabled) ADIS16470_IMU() else null
     private val rotation
-        get() = Rotation2d.fromDegrees(imu.getAngle(IMUAxis.kZ))
+        get() = if (!enabled) Rotation2d() else Rotation2d.fromDegrees(imu!!.getAngle(IMUAxis.kZ))
 
     // -- Odometry & Kinematics --
 
@@ -100,7 +113,7 @@ object SwerveDriveSubsystem :  Drivetrain() {
 
     // -- PhotonVision --
 
-    private val camera = PhotonCamera("FrontCamera")
+    private val camera = if (enabled) PhotonCamera("FrontCamera") else null
 
     private val fieldLayout = AprilTagFieldLayout.loadField(AprilTagFields.k2025ReefscapeAndyMark)
     private val cameraOffset =
@@ -115,7 +128,7 @@ object SwerveDriveSubsystem :  Drivetrain() {
     internal val poseEstimator =
         SwerveDrivePoseEstimator(
             kinematics,
-            Rotation2d(Degrees.of(imu.getAngle(imu.yawAxis))),
+            Rotation2d(Degrees.of(imu!!.getAngle(imu.yawAxis))),
             allModulePositions,
             Pose2d(),
             VecBuilder.fill(0.1, 0.1, 0.1), // State standard deviations
@@ -126,6 +139,7 @@ object SwerveDriveSubsystem :  Drivetrain() {
 
     private val estimatedRobotPose: EstimatedRobotPose?
         get() {
+            if (!enabled || camera == null) return null
             var estimate: EstimatedRobotPose? = null
             camera.allUnreadResults.forEach {
                 estimate = photonEstimator.update(it).getOrNull()
@@ -156,6 +170,9 @@ object SwerveDriveSubsystem :  Drivetrain() {
     }
 
     override fun periodic() {
+        if (!enabled) return
+
+
         odometry.update(rotation, allModulePositions)
 
         if (estimatedRobotPose == null) return
@@ -170,9 +187,11 @@ object SwerveDriveSubsystem :  Drivetrain() {
     // -- Commands --
 
     override fun drive(xSpeed: Double, ySpeed: Double, rot: Double, fieldRelative: Boolean) {
-        val speedX = MAX_SPEED * xSpeed
-        val speedY = MAX_SPEED * ySpeed
-        val speedAngular = MAX_ANGULAR_SPEED * rot
+        if (!enabled) return
+
+        val speedX = xSpeed
+        val speedY = ySpeed
+        val speedAngular = rot
 
         val swerveStates =
             kinematics.toSwerveModuleStates(
@@ -181,7 +200,7 @@ object SwerveDriveSubsystem :  Drivetrain() {
                         speedX,
                         speedY,
                         speedAngular,
-                        poseEstimator.estimatedPosition.rotation
+                        rotation
                     )
                 } else {
                     ChassisSpeeds(speedX, speedY, speedAngular)
@@ -189,7 +208,7 @@ object SwerveDriveSubsystem :  Drivetrain() {
             )
 
         SwerveDriveKinematics.desaturateWheelSpeeds(swerveStates,
-            MAX_SPEED
+            MAX_SPEED.`in`(MetersPerSecond)
         )
 
         allModules.forEachIndexed { i, module -> module.desiredState = swerveStates[i] }
@@ -201,6 +220,7 @@ object SwerveDriveSubsystem :  Drivetrain() {
         allModules.forEachIndexed { i, module -> module.desiredState = desiredStates[i] }
     }
     override fun buildAutoChooser(): SendableChooser<Command> {
+        if (!enabled) return SendableChooser()
         AutoBuilder.configure(
             // poseSupplier =
             { poseEstimator.estimatedPosition },

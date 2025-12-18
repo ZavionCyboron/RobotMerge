@@ -1,5 +1,4 @@
 package org.hangar84.robot2026.subsystems
-
 import com.pathplanner.lib.auto.AutoBuilder
 import com.pathplanner.lib.config.PIDConstants
 import com.pathplanner.lib.config.RobotConfig
@@ -8,63 +7,50 @@ import com.revrobotics.spark.SparkBase
 import com.revrobotics.spark.SparkLowLevel.MotorType
 import com.revrobotics.spark.SparkMax
 import com.revrobotics.spark.config.SparkMaxConfig
-import edu.wpi.first.apriltag.AprilTagFieldLayout
-import edu.wpi.first.apriltag.AprilTagFields
 import edu.wpi.first.math.VecBuilder
 import edu.wpi.first.math.controller.PIDController
 import edu.wpi.first.math.controller.SimpleMotorFeedforward
 import edu.wpi.first.math.estimator.MecanumDrivePoseEstimator
 import edu.wpi.first.math.geometry.*
 import edu.wpi.first.math.kinematics.*
-import edu.wpi.first.networktables.NetworkTableEntry
-import edu.wpi.first.networktables.NetworkTableInstance
 import edu.wpi.first.units.Units.Degrees
-import edu.wpi.first.units.Units.Inches
 import edu.wpi.first.wpilibj.ADIS16470_IMU
 import edu.wpi.first.wpilibj.DriverStation
 import edu.wpi.first.wpilibj.drive.MecanumDrive
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard
 import edu.wpi.first.wpilibj2.command.Command
+import org.hangar84.robot2026.RobotContainer
 import org.hangar84.robot2026.constants.Constants.Mecanum
-import org.photonvision.PhotonCamera
-
-data object DataTable {
-
-    private val table = NetworkTableInstance.getDefault().getTable("DriveData")
-
-    val frontLeftVelocityEntry: NetworkTableEntry = table.getEntry("Front Left Velocity")
-    val frontRightVelocityEntry: NetworkTableEntry = table.getEntry("Front Right Velocity")
-    val rearLeftVelocityEntry: NetworkTableEntry = table.getEntry("Rear Left Velocity")
-    val rearRightVelocityEntry: NetworkTableEntry = table.getEntry("Rear Right Velocity")
-
-    val frontLeftVoltageEntry: NetworkTableEntry = table.getEntry("Front Left Voltage")
-    val frontRightVoltageEntry: NetworkTableEntry = table.getEntry("Front Right Voltage")
-    val rearLeftVoltageEntry: NetworkTableEntry = table.getEntry("Rear Left Voltage")
-    val rearRightVoltageEntry: NetworkTableEntry = table.getEntry("Rear Right Voltage")
-}
+import org.hangar84.robot2026.constants.RobotType
+/*import org.photonvision.PhotonCamera
+import edu.wpi.first.apriltag.AprilTagFieldLayout
+import edu.wpi.first.apriltag.AprilTagFields
+import edu.wpi.first.units.Units.Inches*/
 
 
 object MecanumDriveSubsystem :  Drivetrain() {
 
+    private val enabled = RobotContainer.robotType == RobotType.MECANUM
+
     private val rightConfig: SparkMaxConfig = SparkMaxConfig()
 
-    private val frontLeftMotor = SparkMax(Mecanum.FRONT_LEFT_ID, MotorType.kBrushless)
-    private val frontRightMotor = SparkMax(Mecanum.FRONT_RIGHT_ID, MotorType.kBrushless)
-    private val rearLeftMotor = SparkMax(Mecanum.REAR_LEFT_ID, MotorType.kBrushless)
-    private val rearRightMotor = SparkMax(Mecanum.REAR_RIGHT_ID, MotorType.kBrushless)
+    private val frontLeftMotor: SparkMax? = if (enabled) SparkMax(Mecanum.FRONT_LEFT_ID, MotorType.kBrushless) else null
+    private val frontRightMotor: SparkMax? = if (enabled) SparkMax(Mecanum.FRONT_RIGHT_ID, MotorType.kBrushless) else null
+    private val rearLeftMotor: SparkMax? = if (enabled) SparkMax(Mecanum.REAR_LEFT_ID, MotorType.kBrushless) else null
+    private val rearRightMotor: SparkMax? = if (enabled) SparkMax(Mecanum.REAR_RIGHT_ID, MotorType.kBrushless) else null
 
-    private val imu = ADIS16470_IMU()
+    private val imu = if (enabled) ADIS16470_IMU() else null
 
-    private val frontLeftEncoder = frontLeftMotor.absoluteEncoder
-    private val frontRightEncoder = frontRightMotor.absoluteEncoder
-    private val rearLeftEncoder = rearLeftMotor.absoluteEncoder
-    private val rearRightEncoder = rearRightMotor.absoluteEncoder
+    private val frontLeftEncoder = frontLeftMotor?.absoluteEncoder
+    private val frontRightEncoder = frontRightMotor?.absoluteEncoder
+    private val rearLeftEncoder = rearLeftMotor?.absoluteEncoder
+    private val rearRightEncoder = rearRightMotor?.absoluteEncoder
 
-    var mecanumDrive: MecanumDrive = MecanumDrive(
+    var mecanumDrive: MecanumDrive? = if (enabled) MecanumDrive(
         frontLeftMotor, rearLeftMotor,
         frontRightMotor, rearRightMotor
-    )
+    ) else null
 
     private var frontLeftLocation: Translation2d = Translation2d(0.833, 1.200)
     private var frontRightLocation: Translation2d = Translation2d(0.833, -1.200)
@@ -76,20 +62,23 @@ object MecanumDriveSubsystem :  Drivetrain() {
         rearLeftLocation, rearRightLocation
     )
 
-    private val mecanumDriveWheelPositions: MecanumDriveWheelPositions = MecanumDriveWheelPositions(
-        frontLeftEncoder.position, frontRightEncoder.position,
-        rearLeftEncoder.position, rearRightEncoder.position
+    private val mecanumDriveWheelPositions: MecanumDriveWheelPositions? = if (!enabled) MecanumDriveWheelPositions() else
+        MecanumDriveWheelPositions(
+            frontLeftEncoder!!.position,
+            frontRightEncoder!!.position,
+            rearLeftEncoder!!.position,
+            rearRightEncoder!!.position
     )
 
     private val mecanumDriveOdometry =
         MecanumDriveOdometry(
             mecanumDriveKinematics,
-            Rotation2d.fromDegrees(imu.angle),
+            Rotation2d.fromDegrees(imu!!.angle),
             mecanumDriveWheelPositions,
             Pose2d()
         )
 
-    private val camera = PhotonCamera("FrontCamera")
+    /*private val camera: PhotonCamera? = if (enabled) PhotonCamera("FrontCamera") else null
 
     private val fieldLayout = AprilTagFieldLayout.loadField(AprilTagFields.k2025ReefscapeAndyMark)
     private val cameraOffset =
@@ -100,11 +89,11 @@ object MecanumDriveSubsystem :  Drivetrain() {
                 Inches.of(12.0),
             ),
             Rotation3d(0.0, 0.0, 0.0),
-        )
+        )*/
     internal val poseEstimator =
         MecanumDrivePoseEstimator(
             mecanumDriveKinematics,
-            Rotation2d(Degrees.of(imu.getAngle(imu.yawAxis))),
+            Rotation2d(Degrees.of(imu!!.getAngle(imu.yawAxis))),
             mecanumDriveWheelPositions,
             Pose2d(),
             VecBuilder.fill(0.1, 0.1, 0.1), // State standard deviations
@@ -121,19 +110,15 @@ object MecanumDriveSubsystem :  Drivetrain() {
     private val frontRightVelocityPIDController: PIDController = PIDController(0.0002, 0.0, 0.0)
     private val rearLeftVelocityPIDController: PIDController = PIDController(0.001, 0.000004, 0.007)
     private val rearRightVelocityPIDController: PIDController = PIDController(0.0013, 0.000004, 0.007)
-
-    val pose: Pose2d
-        get() = mecanumDriveOdometry.poseMeters
-
     private val rotation2d
-        get() = Rotation2d.fromDegrees(imu.angle)
+        get() = if (!enabled) Rotation2d() else Rotation2d.fromDegrees(imu!!.angle)
 
     val chassisSpeeds: ChassisSpeeds
-        get() =
+        get() = if (!enabled) ChassisSpeeds() else
             mecanumDriveKinematics.toChassisSpeeds(
                 MecanumDriveWheelSpeeds(
-                    frontLeftEncoder.velocity, frontRightEncoder.velocity,
-                    rearLeftEncoder.velocity, rearRightEncoder.velocity
+                    frontLeftEncoder!!.velocity, frontRightEncoder!!.velocity,
+                    rearLeftEncoder!!.velocity, rearRightEncoder!!.velocity
                 )
             )
 
@@ -142,34 +127,31 @@ object MecanumDriveSubsystem :  Drivetrain() {
     }
 
     init {
-        rightConfig.inverted(false)
-        rearRightMotor.configure(rightConfig, SparkBase.ResetMode.kNoResetSafeParameters, SparkBase.PersistMode.kPersistParameters)
+        if (enabled)  {
+            rightConfig.inverted(false)
+            rearRightMotor!!.configure(rightConfig, SparkBase.ResetMode.kNoResetSafeParameters, SparkBase.PersistMode.kPersistParameters)
 
-        SmartDashboard.putData("Front Left PID Controller", frontLeftVelocityPIDController)
-        SmartDashboard.putData("Front Right PID Controller", frontRightVelocityPIDController)
-        SmartDashboard.putData("Rear Left PID Controller", rearLeftVelocityPIDController)
-        SmartDashboard.putData("Rear Right PID Controller", rearRightVelocityPIDController)
-        SmartDashboard.putData("IMU", imu)
+            SmartDashboard.putData("Front Left PID Controller", frontLeftVelocityPIDController)
+            SmartDashboard.putData("Front Right PID Controller", frontRightVelocityPIDController)
+            SmartDashboard.putData("Rear Left PID Controller", rearLeftVelocityPIDController)
+            SmartDashboard.putData("Rear Right PID Controller", rearRightVelocityPIDController)
+            SmartDashboard.putData("IMU", imu)
+        }
+
+
     }
 
     override fun periodic() {
+        if (!enabled) return
         mecanumDriveOdometry.update(
-            Rotation2d.fromDegrees(imu.angle),
+            rotation2d,
             mecanumDriveWheelPositions
         )
-
-        DataTable.frontLeftVoltageEntry.setDouble(frontLeftMotor.busVoltage)
-        DataTable.frontRightVoltageEntry.setDouble(frontRightMotor.busVoltage)
-        DataTable.rearLeftVoltageEntry.setDouble(rearLeftMotor.busVoltage)
-        DataTable.rearRightVoltageEntry.setDouble(rearRightMotor.busVoltage)
-
-        DataTable.frontLeftVelocityEntry.setDouble(frontLeftEncoder.velocity)
-        DataTable.frontRightVelocityEntry.setDouble(frontRightEncoder.velocity)
-        DataTable.rearLeftVelocityEntry.setDouble(rearLeftEncoder.velocity)
-        DataTable.rearRightVelocityEntry.setDouble(rearRightEncoder.velocity)
     }
 
     fun driveRelative(relativeSpeeds: ChassisSpeeds) {
+        if (!enabled) return
+
         val wheelSpeeds = mecanumDriveKinematics.toWheelSpeeds(relativeSpeeds)
 
         val frontLeftFed = frontLeftFeedForward.calculate(wheelSpeeds.frontLeftMetersPerSecond)
@@ -177,23 +159,26 @@ object MecanumDriveSubsystem :  Drivetrain() {
         val rearLeftFed = rearLeftFeedForward.calculate(wheelSpeeds.rearLeftMetersPerSecond)
         val rearRightFed = rearRightFeedForward.calculate(wheelSpeeds.rearRightMetersPerSecond)
 
-        val frontLeftOutput = frontLeftVelocityPIDController.calculate(frontLeftEncoder.velocity, wheelSpeeds.frontLeftMetersPerSecond)
-        val frontRightOutput = frontRightVelocityPIDController.calculate(frontRightEncoder.velocity, wheelSpeeds.frontRightMetersPerSecond)
-        val rearLeftOutput = rearLeftVelocityPIDController.calculate(rearLeftEncoder.velocity, wheelSpeeds.rearLeftMetersPerSecond)
-        val rearRightOutput = rearRightVelocityPIDController.calculate(rearRightEncoder.velocity, wheelSpeeds.rearRightMetersPerSecond)
+        val frontLeftOutput = frontLeftVelocityPIDController.calculate(frontLeftEncoder!!.velocity, wheelSpeeds.frontLeftMetersPerSecond)
+        val frontRightOutput = frontRightVelocityPIDController.calculate(frontRightEncoder!!.velocity, wheelSpeeds.frontRightMetersPerSecond)
+        val rearLeftOutput = rearLeftVelocityPIDController.calculate(rearLeftEncoder!!.velocity, wheelSpeeds.rearLeftMetersPerSecond)
+        val rearRightOutput = rearRightVelocityPIDController.calculate(rearRightEncoder!!.velocity, wheelSpeeds.rearRightMetersPerSecond)
 
-        frontLeftMotor.setVoltage(frontLeftFed + frontLeftOutput)
-        frontRightMotor.setVoltage(frontRightFed + frontRightOutput)
-        rearLeftMotor.setVoltage(rearLeftFed + rearLeftOutput)
-        rearRightMotor.setVoltage(rearRightFed + rearRightOutput)
+        frontLeftMotor!!.setVoltage(frontLeftFed + frontLeftOutput)
+        frontRightMotor!!.setVoltage(frontRightFed + frontRightOutput)
+        rearLeftMotor!!.setVoltage(rearLeftFed + rearLeftOutput)
+        rearRightMotor!!.setVoltage(rearRightFed + rearRightOutput)
     }
 
 
     override fun drive(xSpeed: Double, ySpeed: Double, rot: Double, fieldRelative: Boolean) {
-        mecanumDrive.driveCartesian(ySpeed, xSpeed, rot)
+        if (!enabled) return
+
+        mecanumDrive!!.driveCartesian(ySpeed, xSpeed, rot)
     }
 
     override fun buildAutoChooser(): SendableChooser<Command> {
+        if (!enabled) return SendableChooser()
         AutoBuilder.configure(
             // poseSupplier =
             { poseEstimator.estimatedPosition },
