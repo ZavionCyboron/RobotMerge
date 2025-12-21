@@ -9,6 +9,7 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition
 import edu.wpi.first.math.kinematics.SwerveModuleState
 import edu.wpi.first.units.Units.Degrees
 import edu.wpi.first.units.measure.Angle
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard
 
 class MAXSwerveModule(
     drivingControllerID: Int,
@@ -17,7 +18,7 @@ class MAXSwerveModule(
     drivingConfig: SparkMaxConfig,
     turningConfig: SparkMaxConfig,
 ) {
-    private val drivingController = SparkMax(drivingControllerID, MotorType.kBrushless)
+    internal val drivingController = SparkMax(drivingControllerID, MotorType.kBrushless)
     val turningController = SparkMax(turningControllerID, MotorType.kBrushless)
 
     var desiredState = SwerveModuleState(0.0, Rotation2d(turningController.absoluteEncoder.position))
