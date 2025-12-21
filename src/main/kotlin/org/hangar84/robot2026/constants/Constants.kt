@@ -2,12 +2,11 @@ package org.hangar84.robot2026.constants
 
 object Constants {
 
-
     object Mecanum {
-        const val FRONT_LEFT_ID = 2
-        const val FRONT_RIGHT_ID = 1
-        const val REAR_LEFT_ID = 3
-        const val REAR_RIGHT_ID = 4
+        const val FRONT_LEFT_ID = 12
+        const val FRONT_RIGHT_ID = 11
+        const val REAR_LEFT_ID = 13
+        const val REAR_RIGHT_ID = 14
     }
 
     object Swerve {
