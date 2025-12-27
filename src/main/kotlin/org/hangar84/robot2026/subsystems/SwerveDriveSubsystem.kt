@@ -26,22 +26,9 @@ import edu.wpi.first.wpilibj2.command.Commands
 import org.hangar84.robot2026.constants.Constants.Swerve
 import org.hangar84.robot2026.sim.SimSensors
 import org.hangar84.robot2026.sim.SimState
-import org.hangar84.robot2026.sim.SimState.estimatedPose
 import org.hangar84.robot2026.sim.SimState.yaw as simyaw
 import org.hangar84.robot2026.sim.SimState.estimatedPose as simpose
 import org.hangar84.robot2026.sim.SimState.isSim
-import org.hangar84.robot2026.sim.SimState.simFL
-import org.hangar84.robot2026.sim.SimState.simFR
-import org.hangar84.robot2026.sim.SimState.simRL
-import org.hangar84.robot2026.sim.SimState.simRR
-import org.hangar84.robot2026.sim.SimState.simFLVel
-import org.hangar84.robot2026.sim.SimState.simFRVel
-import org.hangar84.robot2026.sim.SimState.simRLVel
-import org.hangar84.robot2026.sim.SimState.simRRVel
-import org.hangar84.robot2026.sim.SimState.simFLAngleDeg
-import org.hangar84.robot2026.sim.SimState.simFRAngleDeg
-import org.hangar84.robot2026.sim.SimState.simRLAngleDeg
-import org.hangar84.robot2026.sim.SimState.simRRAngleDeg
 import org.hangar84.robot2026.telemetry.SimTelemetry
 import org.hangar84.robot2026.swerve.MAXSwerveModule
 import org.hangar84.robot2026.swerve.SwerveConfigs.drivingConfig
@@ -262,6 +249,8 @@ class SwerveDriveSubsystem :  Drivetrain() {
     }
 
     private fun publishSwerveTelemetry() {
+        Telemetry.bool("Swerve", true)
+
         val pose = poseEstimator.estimatedPosition
 
         Telemetry.num("Swerve/YawDeg", getHeading().degrees)
@@ -303,30 +292,30 @@ class SwerveDriveSubsystem :  Drivetrain() {
 
         SimTelemetry.speedMPS(
             "Swerve/Sim/SpeedMPS",
-            simFLVel,
-            simFRVel,
-            simRLVel,
-            simRRVel
+            SimState.simFLVel,
+            SimState.simFRVel,
+            SimState.simRLVel,
+            SimState.simRRVel
         )
 
         SimTelemetry.wheelEncoders(
             "Swerve/Sim/Encoders",
-            simFL, simFR, simRL, simRR,
-            simFLVel, simFRVel, simRLVel, simRRVel
+            SimState.simFL, SimState.simFR, SimState.simRL, SimState.simRR,
+            SimState.simFLVel, SimState.simFRVel, SimState.simRLVel, SimState.simRRVel
         )
 
         SimTelemetry.angleDeg(
             "Swerve/Sim/AzimuthDeg",
-            simFLAngleDeg,
-            simFRAngleDeg,
-            simRLAngleDeg,
-            simRRAngleDeg
+            SimState.simFLAngleDeg,
+            SimState.simFRAngleDeg,
+            SimState.simRLAngleDeg,
+            SimState.simRRAngleDeg
         )
 
         SimTelemetry.poseCompare(
             "Swerve/Sim/PoseCompare",
             SimState.groundTruthPose,
-            estimatedPose
+            simpose
         )
     }
 
@@ -462,10 +451,10 @@ class SwerveDriveSubsystem :  Drivetrain() {
             maxLinearSpeedMps
         )
         return arrayOf(
-            SwerveModulePosition(simFL, states[0].angle),
-            SwerveModulePosition(simFR, states[1].angle),
-            SwerveModulePosition(simRL, states[2].angle),
-            SwerveModulePosition(simRR,states[3].angle)
+            SwerveModulePosition(SimState.simFL, states[0].angle),
+            SwerveModulePosition(SimState.simFR, states[1].angle),
+            SwerveModulePosition(SimState.simRL, states[2].angle),
+            SwerveModulePosition(SimState.simRR,states[3].angle)
         )
     }
 
@@ -491,20 +480,20 @@ class SwerveDriveSubsystem :  Drivetrain() {
             maxLinearSpeedMps
         )
 
-        simFLVel = states[0].speedMetersPerSecond
-        simFRVel = states[1].speedMetersPerSecond
-        simRLVel = states[2].speedMetersPerSecond
-        simRRVel = states[3].speedMetersPerSecond
+        SimState.simFLVel = states[0].speedMetersPerSecond
+        SimState.simFRVel = states[1].speedMetersPerSecond
+        SimState.simRLVel = states[2].speedMetersPerSecond
+        SimState.simRRVel = states[3].speedMetersPerSecond
 
-        simFLAngleDeg = stepAngleDeg(simFLAngleDeg, states[0].angle.degrees, 720.0, dtSeconds)
-        simFRAngleDeg = stepAngleDeg(simFRAngleDeg, states[1].angle.degrees, 720.0, dtSeconds)
-        simRLAngleDeg = stepAngleDeg(simRLAngleDeg, states[2].angle.degrees, 720.0, dtSeconds)
-        simRRAngleDeg = stepAngleDeg(simRRAngleDeg, states[3].angle.degrees, 720.0, dtSeconds)
+        SimState.simFLAngleDeg = stepAngleDeg(SimState.simFLAngleDeg, states[0].angle.degrees, 720.0, dtSeconds)
+        SimState.simFRAngleDeg = stepAngleDeg(SimState.simFRAngleDeg, states[1].angle.degrees, 720.0, dtSeconds)
+        SimState.simRLAngleDeg = stepAngleDeg(SimState.simRLAngleDeg, states[2].angle.degrees, 720.0, dtSeconds)
+        SimState.simRRAngleDeg = stepAngleDeg(SimState.simRRAngleDeg, states[3].angle.degrees, 720.0, dtSeconds)
 
-        simFL += simFLVel * dtSeconds
-        simFR += simFRVel * dtSeconds
-        simRL += simRLVel * dtSeconds
-        simRR += simRRVel * dtSeconds
+        SimState.simFL += SimState.simFLVel * dtSeconds
+        SimState.simFR += SimState.simFRVel * dtSeconds
+        SimState.simRL += SimState.simRLVel * dtSeconds
+        SimState.simRR += SimState.simRRVel * dtSeconds
 
         simyaw = newYawTruth
         val fieldDelta = Translation2d(dx, dy).rotateBy(simyaw.minus(Rotation2d(dtheta)))
@@ -514,10 +503,10 @@ class SwerveDriveSubsystem :  Drivetrain() {
         val yawMeas = SimSensors.measuredYaw()
 
         val positionMeas = arrayOf(
-            SwerveModulePosition(simFL + 0.0, states[0].angle),
-            SwerveModulePosition(simFR + 0.0, states[1].angle),
-            SwerveModulePosition(simRL + 0.0, states[2].angle),
-            SwerveModulePosition(simRR + 0.0, states[3].angle),
+            SwerveModulePosition(SimState.simFL + 0.0, states[0].angle),
+            SwerveModulePosition(SimState.simFR + 0.0, states[1].angle),
+            SwerveModulePosition(SimState.simRL + 0.0, states[2].angle),
+            SwerveModulePosition(SimState.simRR + 0.0, states[3].angle),
         )
 
         // Update odometry/poseEstimator with MEASURED sensors
@@ -526,7 +515,7 @@ class SwerveDriveSubsystem :  Drivetrain() {
 
         // Store for comparison widgets
         SimState.groundTruthPose = simpose
-        estimatedPose = poseEstimator.estimatedPosition
+        simpose = poseEstimator.estimatedPosition
 
         publishSwerveSimTelemetry(dtSeconds)
     }

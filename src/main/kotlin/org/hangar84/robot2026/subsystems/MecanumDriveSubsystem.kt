@@ -23,26 +23,12 @@ import org.hangar84.robot2026.mecanum.MecanumConfigs.driveConfig
 import org.hangar84.robot2026.mecanum.MecanumModule
 import org.hangar84.robot2026.sim.SimSensors
 import org.hangar84.robot2026.sim.SimState
-import org.hangar84.robot2026.sim.SimState.estimatedPose
 import org.hangar84.robot2026.sim.SimState.isSim
-import org.hangar84.robot2026.sim.SimState.simFL
-import org.hangar84.robot2026.sim.SimState.simFLVel
-import org.hangar84.robot2026.sim.SimState.simFR
-import org.hangar84.robot2026.sim.SimState.simFRVel
-import org.hangar84.robot2026.sim.SimState.simRL
-import org.hangar84.robot2026.sim.SimState.simRLVel
-import org.hangar84.robot2026.sim.SimState.simRR
-import org.hangar84.robot2026.sim.SimState.simRRVel
 import org.hangar84.robot2026.telemetry.SimTelemetry
 import org.hangar84.robot2026.telemetry.Telemetry
 import kotlin.jvm.optionals.getOrNull
 import org.hangar84.robot2026.sim.SimState.estimatedPose as simpose
 import org.hangar84.robot2026.sim.SimState.yaw as simyaw
-
-/*import org.photonvision.PhotonCamera
-import edu.wpi.first.apriltag.AprilTagFieldLayout
-import edu.wpi.first.apriltag.AprilTagFields
-import edu.wpi.first.units.Units.Inches*/
 
 
 class MecanumDriveSubsystem :  Drivetrain() {
@@ -77,8 +63,8 @@ class MecanumDriveSubsystem :  Drivetrain() {
         poseEstimator.resetPosition(simyaw, simWheelPositions(), pose)
 
         // Optional: reset your wheel distances too if you treat simFL/simFR/... as distance
-        simFL = 0.0; simFR = 0.0; simRL = 0.0; simRR = 0.0
-        simFLVel = 0.0; simFRVel = 0.0; simRLVel = 0.0; simRRVel = 0.0
+        SimState.simFL = 0.0; SimState.simFR = 0.0; SimState.simRL = 0.0; SimState.simRR = 0.0
+        SimState.simFLVel = 0.0; SimState.simFRVel = 0.0; SimState.simRLVel = 0.0; SimState.simRRVel = 0.0
     }
     override fun zeroHeading() {
         imu?.reset()
@@ -165,6 +151,8 @@ class MecanumDriveSubsystem :  Drivetrain() {
     }
 
     private fun publishMecanumTelemetry(wheelPositions: MecanumDriveWheelPositions) {
+        Telemetry.bool("Mecanum", true)
+
         // --- Heading / Pose ---
         val pose = poseEstimator.estimatedPosition
 
@@ -213,13 +201,13 @@ class MecanumDriveSubsystem :  Drivetrain() {
 
         SimTelemetry.wheelEncoders(
             "Mecanum/Sim/Encoders",
-            simFL, simFR, simRL, simRR,
-            simFLVel, simFRVel, simRLVel, simRRVel
+            SimState.simFL, SimState.simFR, SimState.simRL, SimState.simRR,
+            SimState.simFLVel, SimState.simFRVel, SimState.simRLVel, SimState.simRRVel
         )
         SimTelemetry.poseCompare(
             "Mecanum/Sim/PoseCompare",
             SimState.groundTruthPose,
-            estimatedPose
+            simpose
         )
 
     }
@@ -309,10 +297,10 @@ class MecanumDriveSubsystem :  Drivetrain() {
 
     private fun simWheelPositions() =
         MecanumDriveWheelPositions(
-            simFL,
-            simFR,
-            simRL,
-            simRR
+            SimState.simFL,
+            SimState.simFR,
+            SimState.simRL,
+            SimState.simRR
         )
 
     private fun applyMotorLag(current: Double, target: Double, dt: Double): Double {
@@ -339,15 +327,15 @@ class MecanumDriveSubsystem :  Drivetrain() {
 
         val ws = kinematics.toWheelSpeeds(commandedSpeeds)
 
-        simFLVel = applyMotorLag(simFLVel, ws.frontLeftMetersPerSecond, dtSeconds)
-        simFRVel = applyMotorLag(simFRVel, ws.frontRightMetersPerSecond, dtSeconds)
-        simRLVel = applyMotorLag(simRLVel, ws.rearLeftMetersPerSecond, dtSeconds)
-        simRRVel = applyMotorLag(simRRVel, ws.rearRightMetersPerSecond, dtSeconds)
-        
-        simFL += simFLVel * dtSeconds
-        simFR += simFRVel * dtSeconds
-        simRL += simRLVel * dtSeconds
-        simRR += simRRVel * dtSeconds
+        SimState.simFLVel = applyMotorLag(SimState.simFLVel, ws.frontLeftMetersPerSecond, dtSeconds)
+        SimState.simFRVel = applyMotorLag(SimState.simFRVel, ws.frontRightMetersPerSecond, dtSeconds)
+        SimState.simRLVel = applyMotorLag(SimState.simRLVel, ws.rearLeftMetersPerSecond, dtSeconds)
+        SimState.simRRVel = applyMotorLag(SimState.simRRVel, ws.rearRightMetersPerSecond, dtSeconds)
+
+        SimState.simFL += SimState.simFLVel * dtSeconds
+        SimState.simFR += SimState.simFRVel * dtSeconds
+        SimState.simRL += SimState.simRLVel * dtSeconds
+        SimState.simRR += SimState.simRRVel * dtSeconds
 
         simyaw = newYawTruth
         val fieldDelta = Translation2d(dx, dy).rotateBy(simyaw.minus(Rotation2d(dtheta)))
@@ -365,7 +353,7 @@ class MecanumDriveSubsystem :  Drivetrain() {
 
         // Store for comparison widgets
         SimState.groundTruthPose = simpose
-        estimatedPose = poseEstimator.estimatedPosition
+        simpose = poseEstimator.estimatedPosition
 
         publishMecanumSimTelemetry(dtSeconds)
     }
