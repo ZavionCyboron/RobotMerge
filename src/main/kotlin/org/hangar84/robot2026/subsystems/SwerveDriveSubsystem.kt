@@ -121,9 +121,12 @@ class SwerveDriveSubsystem :  Drivetrain() {
     private val rotation
         get() = if (isSim) simyaw else Rotation2d.fromDegrees(imu!!.getAngle(IMUAxis.kZ))
 
-    fun zeroHeading() {
-        if (isSim) SimSensors.zeroGyro()
-        else imu?.reset()
+    override fun resetPose(pose: Pose2d) {
+        odometry.resetPosition(rotation, allModulePositions, pose)
+        poseEstimator.resetPosition(rotation, allModulePositions, pose)
+    }
+    override fun zeroHeading() {
+        imu?.reset()
     }
 
     override fun getHeading(): Rotation2d =
@@ -321,7 +324,7 @@ class SwerveDriveSubsystem :  Drivetrain() {
         )
 
         SimTelemetry.poseCompare(
-            "Mecanum/PoseCompare",
+            "Swerve/Sim/PoseCompare",
             SimState.groundTruthPose,
             estimatedPose
         )
@@ -479,8 +482,8 @@ class SwerveDriveSubsystem :  Drivetrain() {
         val yawRateDegPerSecTruth = Math.toDegrees(commandedSpeeds.omegaRadiansPerSecond)
 
         // Update sim sensor drift/bias
-        SimSensors.update(dtSeconds)
         SimSensors.setTrueYaw(newYawTruth, yawRateDegPerSecTruth)
+        SimSensors.update(dtSeconds)
 
         val states = kinematics.toSwerveModuleStates(commandedSpeeds)
         SwerveDriveKinematics.desaturateWheelSpeeds(

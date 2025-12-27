@@ -67,9 +67,21 @@ class MecanumDriveSubsystem :  Drivetrain() {
     private val rotation2d
         get() = if (isSim) simyaw else Rotation2d.fromDegrees(imu!!.getAngle(imu.yawAxis))
 
-    fun zeroHeading() {
-        if (isSim) SimSensors.zeroGyro()
-        else imu?.reset()
+    override fun resetPose(pose: Pose2d) {
+        // Ground truth (sim)
+        simpose = pose
+        simyaw = pose.rotation
+
+        // Reset estimators to match
+        odometry.resetPosition(simyaw, simWheelPositions(), pose)
+        poseEstimator.resetPosition(simyaw, simWheelPositions(), pose)
+
+        // Optional: reset your wheel distances too if you treat simFL/simFR/... as distance
+        simFL = 0.0; simFR = 0.0; simRL = 0.0; simRR = 0.0
+        simFLVel = 0.0; simFRVel = 0.0; simRLVel = 0.0; simRRVel = 0.0
+    }
+    override fun zeroHeading() {
+        imu?.reset()
     }
 
     override fun getHeading(): Rotation2d =
@@ -180,8 +192,8 @@ class MecanumDriveSubsystem :  Drivetrain() {
     private fun publishMecanumSimTelemetry(dtSeconds: Double) {
         SimTelemetry.bool("Mecanum/Sim", true)
 
-        SimTelemetry.pose("Mecanum/Pose", simpose)
-        SimTelemetry.num("Mecanum/YawDeg", getHeading().degrees)
+        SimTelemetry.pose("Mecanum/Sim/Pose", simpose)
+        SimTelemetry.num("Mecanum/Sim/YawDeg", getHeading().degrees)
 
         SimTelemetry.wheelVel(
             "Mecanum/Sim/Cmd",
@@ -205,7 +217,7 @@ class MecanumDriveSubsystem :  Drivetrain() {
             simFLVel, simFRVel, simRLVel, simRRVel
         )
         SimTelemetry.poseCompare(
-            "Mecanum/PoseCompare",
+            "Mecanum/Sim/PoseCompare",
             SimState.groundTruthPose,
             estimatedPose
         )
@@ -322,8 +334,8 @@ class MecanumDriveSubsystem :  Drivetrain() {
         val yawRateDegPerSecTruth = Math.toDegrees(commandedSpeeds.omegaRadiansPerSecond)
 
         // Update sim sensor drift/bias
-        SimSensors.update(dtSeconds)
         SimSensors.setTrueYaw(newYawTruth, yawRateDegPerSecTruth)
+        SimSensors.update(dtSeconds)
 
         val ws = kinematics.toWheelSpeeds(commandedSpeeds)
 
