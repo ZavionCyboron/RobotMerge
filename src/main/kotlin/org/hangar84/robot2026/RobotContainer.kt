@@ -2,7 +2,6 @@ package org.hangar84.robot2026
 
 import edu.wpi.first.math.MathUtil
 import edu.wpi.first.math.filter.SlewRateLimiter
-import edu.wpi.first.math.geometry.Pose2d
 import edu.wpi.first.math.geometry.Rotation2d
 import edu.wpi.first.wpilibj.DigitalInput
 import edu.wpi.first.wpilibj.DriverStation
@@ -53,7 +52,7 @@ object RobotContainer {
         }
 
     // The robot's subsystems
-    private val drivetrain: Drivetrain = when (robotType) {
+    val drivetrain: Drivetrain = when (robotType) {
         RobotType.SWERVE -> SwerveDriveSubsystem()
         RobotType.MECANUM -> MecanumDriveSubsystem()
     }
@@ -69,22 +68,22 @@ object RobotContainer {
 
     init {
         if (isSim) {
-            val startPose = Pose2d(1.113225, 5.742683, Rotation2d.fromDegrees(0.0))
+            // ***
+            // make sure to uncomment the one you want to use
+            // and to comment the one that was previously used so there is no conflictions
+            // ***
 
-            // Reset drivetrain (odometry + estimators + sim truth)
-            drivetrain.resetPose(startPose)
+            //SimField.leftBluePose()
 
-            // Reset sim gyro truth to match
-            SimSensors.setTrueYaw(startPose.rotation, 0.0)
-            SimSensors.zeroGyro()
+            //SimField.middleBluePose()
 
-            // Publish Field2d and set it initially (optional)
-            setupDashboard()
-            setRobotPose(startPose)
+            //SimField.rightBluePose()
 
-            // keep SimState consistent if you're using it for comparisons
-            SimState.groundTruthPose = startPose
-            SimState.estimatedPose = startPose
+            //SimField.rightRedPose()
+
+            //SimField.middleRedPose()
+
+            //SimField.leftRedPose()
         }
 
         SmartDashboard.putString("Selected Robot Type", robotType.name)
