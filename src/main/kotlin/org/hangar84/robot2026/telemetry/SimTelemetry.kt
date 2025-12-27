@@ -3,7 +3,6 @@ package org.hangar84.robot2026.telemetry
 import edu.wpi.first.math.geometry.Pose2d
 import edu.wpi.first.math.geometry.Rotation2d
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard
-import org.hangar84.robot2026.sim.SimSensors
 
 object SimTelemetry {
     fun pose(prefix: String, pose: Pose2d) {

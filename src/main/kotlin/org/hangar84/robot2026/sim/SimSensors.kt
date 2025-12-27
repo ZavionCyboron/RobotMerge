@@ -7,10 +7,10 @@ import kotlin.random.Random
 
 object SimSensors {
     // --- Tunables ---
-    var encoderPosStdMeters = 0.002      // ~2mm noise
-    var encoderVelStdMps = 0.02          // 0.02 m/s noise
-    var gyroYawStdDeg = 0.6              // ~0.6 deg noise
-    var gyroRateStdDegPerSec = 1.5       // rate noise
+    //var encoderPosStdMeters = 0.002      // ~2mm noise
+    //var encoderVelStdMps = 0.02          // 0.02 m/s noise
+    var gyroYawStdDeg = 0.15              // ~0.6 deg noise
+    var gyroRateStdDegPerSec = 2.0       // rate noise
     var gyroBiasDriftDegPerSec = 0.02    // slow bias drift (deg/sec)
 
     // deterministic randomness per run (change seed if you want)
@@ -21,6 +21,9 @@ object SimSensors {
         private set
     var trueYawRateDegPerSec = 0.0
         private set
+
+    private var cachedMeasuredYaw = Rotation2d()
+    private var cachedMeasuredYawRateDegPerSec = 0.0
 
     // --- What the robot "measures" after reset offsets + noise ---
     private var yawZeroOffset = Rotation2d()   // subtract this after "zero"
@@ -36,29 +39,33 @@ object SimSensors {
         trueYawRateDegPerSec = yawRateDegPerSec
     }
 
-    fun measuredYaw(): Rotation2d {
-        val noisyDeg = gaussian(0.0, gyroYawStdDeg) + gyroBiasDeg
-        val yawDeg = (trueYaw.minus(yawZeroOffset)).degrees + noisyDeg
-        return Rotation2d.fromDegrees(yawDeg)
-    }
+    fun measuredYaw(): Rotation2d = cachedMeasuredYaw
 
-    fun measuredYawRateDegPerSec(): Double {
-        return trueYawRateDegPerSec + gaussian(0.0, gyroRateStdDegPerSec)
-    }
+    fun measuredYawRateDegPerSec(): Double = cachedMeasuredYawRateDegPerSec
 
     fun update(dtSeconds: Double) {
         // Bias drift (random walk)
         gyroBiasDeg += gyroBiasDriftDegPerSec * dtSeconds * gaussian(0.0, 1.0)
+
+        cachedMeasuredYaw =
+            Rotation2d.fromDegrees(
+                (trueYaw.minus(yawZeroOffset)).degrees +
+                        gaussian(0.0, gyroYawStdDeg) +
+                        gyroBiasDeg
+            )
+
+        cachedMeasuredYawRateDegPerSec =
+            trueYawRateDegPerSec + gaussian(0.0, gyroRateStdDegPerSec)
     }
 
     // --- Encoders ---
     data class EncoderTruth(var posMeters: Double = 0.0, var velMps: Double = 0.0)
 
-    fun measuredPos(truth: EncoderTruth): Double =
+    /*fun measuredPos(truth: EncoderTruth): Double =
         truth.posMeters + gaussian(0.0, encoderPosStdMeters)
 
     fun measuredVel(truth: EncoderTruth): Double =
-        truth.velMps + gaussian(0.0, encoderVelStdMps)
+        truth.velMps + gaussian(0.0, encoderVelStdMps)*/
 
     private fun gaussian(mean: Double, std: Double): Double {
         // Box–Muller
