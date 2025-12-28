@@ -173,8 +173,8 @@ src/
 │           ├── commands/        # Reusable drive and robot commands
 │           ├── constants/       # Robot constants and configuration values
 │           ├── mecanum/         # Mecanum drivetrain implementation
-│           ├── subsystems/      # Shared subsystem interfaces and implementations
 │           ├── sim/             # Custom simulation framework (state, sensors, field)
+│           ├── subsystems/      # Shared subsystem interfaces and implementations
 │           ├── swerve/          # MAXSwerve drivetrain implementation
 │           ├── telemetry/       # Telemetry and simulation telemetry helpers
 │           ├── Main.kt          # Robot entry point
