@@ -159,7 +159,7 @@ Each pose:
 ---
 
 ## Repository Structure
-
+```text
 src/
 ├── main/
 │   ├──deploy/
@@ -180,7 +180,7 @@ src/
 │           ├── Main.kt          # Robot entry point
 │           ├── Robot.kt         # Robot lifecycle logic
 │           └── RobotContainer.kt# Input bindings, drivetrain selection, autos
-
+```
 
 ## Getting Started
 
