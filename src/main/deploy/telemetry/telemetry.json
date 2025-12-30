@@ -1,0 +1,31 @@
+{
+  "enabled": {
+    "ds": true,
+    "pose": true,
+    "gyro": true,
+    "chassis": true,
+    "wheels": true,
+    "motors": true,
+    "launcher": true,
+    "debug": true
+  },
+  "prefix": {
+    "ds": "DS",
+    "pose": "Pose",
+    "gyro": "Gyro",
+    "chassis": "Chassis",
+    "wheels": "Wheels",
+    "motors": "Motors",
+    "launcher": "Launcher"
+  },
+  "rateHz": {
+    "ds": 10,
+    "pose": 25,
+    "gyro": 50,
+    "chassis": 25,
+    "wheels": 10,
+    "motors": 25,
+    "launcher": 25,
+    "debug": 5
+  }
+}
