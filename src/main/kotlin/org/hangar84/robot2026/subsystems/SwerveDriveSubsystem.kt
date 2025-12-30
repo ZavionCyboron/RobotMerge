@@ -4,48 +4,49 @@ import com.pathplanner.lib.auto.AutoBuilder
 import com.pathplanner.lib.config.PIDConstants
 import com.pathplanner.lib.config.RobotConfig
 import com.pathplanner.lib.controllers.PPHolonomicDriveController
-import com.revrobotics.spark.config.SparkMaxConfig
 import edu.wpi.first.apriltag.AprilTagFieldLayout
 import edu.wpi.first.apriltag.AprilTagFields
 import edu.wpi.first.hal.FRCNetComm.tInstances
 import edu.wpi.first.hal.FRCNetComm.tResourceType
 import edu.wpi.first.hal.HAL
-import edu.wpi.first.math.MathUtil
 import edu.wpi.first.math.VecBuilder
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator
 import edu.wpi.first.math.geometry.*
 import edu.wpi.first.math.kinematics.*
 import edu.wpi.first.units.Units.*
-import edu.wpi.first.wpilibj.ADIS16470_IMU
-import edu.wpi.first.wpilibj.ADIS16470_IMU.IMUAxis
 import edu.wpi.first.wpilibj.DriverStation
+import edu.wpi.first.wpilibj.RobotBase
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard
 import edu.wpi.first.wpilibj2.command.Command
 import edu.wpi.first.wpilibj2.command.Commands
-import org.hangar84.robot2026.constants.Constants.Swerve
-import org.hangar84.robot2026.sim.SimSensors
-import org.hangar84.robot2026.sim.SimState
-import org.hangar84.robot2026.sim.SimState.yaw as simyaw
-import org.hangar84.robot2026.sim.SimState.estimatedPose as simpose
-import org.hangar84.robot2026.sim.SimState.isSim
-import org.hangar84.robot2026.telemetry.SimTelemetry
-import org.hangar84.robot2026.swerve.MAXSwerveModule
-import org.hangar84.robot2026.swerve.SwerveConfigs.drivingConfig
-import org.hangar84.robot2026.swerve.SwerveConfigs.turningConfig
-import org.hangar84.robot2026.telemetry.Telemetry
+import org.hangar84.robot2026.RobotContainer.robotType
+import org.hangar84.robot2026.io.GyroIO
+import org.hangar84.robot2026.io.SwerveIO
+import org.hangar84.robot2026.telemetry.TelemetryRouter
 import org.photonvision.EstimatedRobotPose
 import org.photonvision.PhotonCamera
 import org.photonvision.PhotonPoseEstimator
 import kotlin.jvm.optionals.getOrNull
+import org.hangar84.robot2026.io.GyroIO.Inputs as gyroInputs
+import org.hangar84.robot2026.io.SwerveIO.Inputs as swerveInputs
 
 
-class SwerveDriveSubsystem :  Drivetrain() {
+class SwerveDriveSubsystem(
+    private val swerveIO: SwerveIO,
+    private val gyroIO: GyroIO
+
+): Drivetrain() {
     // Constants
     companion object {
         internal val MAX_SPEED = MetersPerSecond.of(4.8)
         internal val MAX_ANGULAR_SPEED = RotationsPerSecond.of(1.0)
     }
+
+    private val isSim = RobotBase.isSimulation()
+
+    private val gyroInputs = gyroInputs()
+    private val swerveInputs = swerveInputs()
 
     override val maxLinearSpeedMps: Double = MAX_SPEED.`in`(MetersPerSecond)
     override val maxAngularSpeedRadPerSec: Double = MAX_ANGULAR_SPEED.`in`(RadiansPerSecond)
@@ -53,74 +54,42 @@ class SwerveDriveSubsystem :  Drivetrain() {
     private val WHEEL_BASE = Inches.of(24.0)
     private val TRACK_WIDTH = Inches.of(24.5)
 
-    private val rearRightDrivingConfig = SparkMaxConfig().apply {
-        apply(drivingConfig)
-        inverted(true)
+    override fun getHeading(): Rotation2d = gyroInputs.yaw
+
+    override fun zeroHeading() {
+        gyroIO.zeroYaw()
     }
-
-
-    // Create MAXSwerveModules
-    val frontLeft: MAXSwerveModule = MAXSwerveModule(
-        Swerve.FRONT_LEFT_DRIVING_ID,
-        Swerve.FRONT_LEFT_TURNING_ID,
-        Degrees.of(270.0),
-        drivingConfig,
-        turningConfig
-    )
-
-
-    val frontRight: MAXSwerveModule = MAXSwerveModule(
-        Swerve.FRONT_RIGHT_DRIVING_ID,
-        Swerve.FRONT_RIGHT_TURNING_ID,
-        Degrees.of(0.0),
-        drivingConfig,
-        turningConfig
-    )
-
-    val rearLeft: MAXSwerveModule = MAXSwerveModule(
-        Swerve.REAR_LEFT_DRIVING_ID,
-        Swerve.REAR_LEFT_TURNING_ID,
-        Degrees.of(180.0),
-        drivingConfig,
-        turningConfig
-    )
-
-    val rearRight: MAXSwerveModule = MAXSwerveModule(
-        Swerve.REAR_RIGHT_DRIVING_ID,
-        Swerve.REAR_RIGHT_TURNING_ID,
-        Degrees.of(90.0),
-        rearRightDrivingConfig,
-        turningConfig
-    )
-
-
-    // The gyro sensor
-
-    private val allModules
-        get() = arrayOf(frontLeft, frontRight, rearLeft, rearRight)
-    private val allModulePositions: Array<SwerveModulePosition>
-        get() = allModules.map { it.position }.toTypedArray()
-    private val allModuleStates: Array<SwerveModuleState>
-        get() = allModules.map { it.state }.toTypedArray()
-    // -- Sensors --
-
-    private val imu: ADIS16470_IMU? = if (isSim) null else ADIS16470_IMU()
-    private val rotation
-        get() = if (isSim) simyaw else Rotation2d.fromDegrees(imu!!.getAngle(IMUAxis.kZ))
 
     override fun resetPose(pose: Pose2d) {
-        odometry.resetPosition(rotation, allModulePositions, pose)
-        poseEstimator.resetPosition(rotation, allModulePositions, pose)
-    }
-    override fun zeroHeading() {
-        imu?.reset()
+        val positions = modulePositionsFromInputs()
+        odometry.resetPosition(getHeading(), positions, pose)
+        poseEstimator.resetPosition(getHeading(), positions, pose)
     }
 
-    override fun getHeading(): Rotation2d =
-        if (isSim)
-            SimSensors.measuredYaw()
-        else
-            rotation
+    private fun modulePositionsFromInputs(): Array<SwerveModulePosition> {
+        fun pos(m: SwerveIO.ModuleInputs) =
+            SwerveModulePosition(m.drivePosMeters, Rotation2d(m.turnPosRad))
+
+        return arrayOf(
+            pos(swerveInputs.fl),
+            pos(swerveInputs.fr),
+            pos(swerveInputs.rl),
+            pos(swerveInputs.rr),
+        )
+    }
+
+    private fun moduleStatesFromInputs(): Array<SwerveModuleState> {
+        fun st(m: SwerveIO.ModuleInputs) =
+            SwerveModuleState(m.driveVelMps, Rotation2d(m.turnPosRad))
+
+        return arrayOf(
+            st(swerveInputs.fl),
+            st(swerveInputs.fr),
+            st(swerveInputs.rl),
+            st(swerveInputs.rr),
+        )
+    }
+
 
     // -- Odometry & Kinematics --
 
@@ -132,11 +101,18 @@ class SwerveDriveSubsystem :  Drivetrain() {
             Translation2d(-WHEEL_BASE / 2.0, -TRACK_WIDTH / 2.0),
         )
 
+    private val zeroPositions = arrayOf(
+        SwerveModulePosition(),
+        SwerveModulePosition(),
+        SwerveModulePosition(),
+        SwerveModulePosition()
+    )
+
     internal var odometry: SwerveDriveOdometry =
         SwerveDriveOdometry(
             kinematics,
             getHeading(),
-            allModulePositions
+            zeroPositions
         )
 
     // -- PhotonVision --
@@ -157,10 +133,10 @@ class SwerveDriveSubsystem :  Drivetrain() {
         SwerveDrivePoseEstimator(
             kinematics,
             getHeading(),
-            allModulePositions,
+            zeroPositions,
             Pose2d(),
-            VecBuilder.fill(0.1, 0.1, 0.1), // State standard deviations
-            VecBuilder.fill(1.0, 1.0, 1.0), // Vision standard deviations
+            VecBuilder.fill(0.1, 0.1, 0.1),
+            VecBuilder.fill(1.0, 1.0, 1.0),
         )
     private val photonEstimator: PhotonPoseEstimator =
         PhotonPoseEstimator(
@@ -181,19 +157,15 @@ class SwerveDriveSubsystem :  Drivetrain() {
         }
 
     // - Static Commands -
-    internal val PARK_COMMAND: Command = Commands.run ( {
-        val positions =
-            arrayOf(
-                Rotation2d.fromDegrees(45.0), // Front left
-                Rotation2d.fromDegrees(-45.0), // Front right
-                Rotation2d.fromDegrees(-45.0), // Rear left
-                Rotation2d.fromDegrees(45.0), // Rear right
-            )
-
-        allModules.forEachIndexed { i, module ->
-            module.desiredState = SwerveModuleState(0.0, positions[i])
-        }
-    }, this )
+    internal val PARK_COMMAND: Command = Commands.run({
+        val states = arrayOf(
+            SwerveModuleState(0.0, Rotation2d.fromDegrees(45.0)),   // FL
+            SwerveModuleState(0.0, Rotation2d.fromDegrees(-45.0)),  // FR
+            SwerveModuleState(0.0, Rotation2d.fromDegrees(-45.0)),  // RL
+            SwerveModuleState(0.0, Rotation2d.fromDegrees(45.0)),   // RR
+        )
+        swerveIO.setModuleStates(states[0], states[1], states[2], states[3])
+    }, this)
 
     private val DRIVE_FORWARD_COMMAND: Command =
         Commands.run(
@@ -208,187 +180,86 @@ class SwerveDriveSubsystem :  Drivetrain() {
         )
     }
 
-    private fun publishModuleTelemetry(name: String, module: MAXSwerveModule) {
-        val actual = module.state
-        val desired = module.desiredState
-
-        // --- Kinematics ---
-        SmartDashboard.putNumber("$name/SpeedMps", actual.speedMetersPerSecond)
-        SmartDashboard.putNumber("$name/AngleDeg", actual.angle.degrees)
-
-        SmartDashboard.putNumber("$name/DesiredSpeedMps", desired.speedMetersPerSecond)
-        SmartDashboard.putNumber("$name/DesiredAngleDeg", desired.angle.degrees)
-
-        // --- Drive motor ---
-        SmartDashboard.putNumber(
-            "$name/DriveCurrent",
-            module.drivingController.outputCurrent
-        )
-        SmartDashboard.putNumber(
-            "$name/DriveOutput",
-            module.drivingController.appliedOutput
-        )
-        SmartDashboard.putNumber(
-            "$name/DriveTempC",
-            module.drivingController.motorTemperature
-        )
-
-        // --- Turn motor ---
-        SmartDashboard.putNumber(
-            "$name/TurnCurrent",
-            module.turningController.outputCurrent
-        )
-        SmartDashboard.putNumber(
-            "$name/TurnOutput",
-            module.turningController.appliedOutput
-        )
-        SmartDashboard.putNumber(
-            "$name/TurnTempC",
-            module.turningController.motorTemperature
-        )
-    }
-
     private fun publishSwerveTelemetry() {
-        Telemetry.bool("Swerve", true)
+        TelemetryRouter.bool(robotType.name, true)
 
         val pose = poseEstimator.estimatedPosition
+        TelemetryRouter.num("${robotType.name}/YawDeg", getHeading().degrees)
+        TelemetryRouter.pose(pose)
 
-        Telemetry.num("Swerve/YawDeg", getHeading().degrees)
-        Telemetry.pose("Swerve/Pose", pose)
-
-        val chassis = kinematics.toChassisSpeeds(*allModuleStates)
-        Telemetry.chassisVel(
-            "Swerve/Chassis",
+        val chassis = kinematics.toChassisSpeeds(*moduleStatesFromInputs())
+        TelemetryRouter.chassisVel(
             chassis.vxMetersPerSecond,
             chassis.vyMetersPerSecond,
             chassis.omegaRadiansPerSecond
         )
 
-        // Only compute estimate ONCE per periodic
-        // (See periodic() change below)
-        // SmartDashboard.putBoolean("Swerve/Vision/HasEstimate", ...)
-
-        publishModuleTelemetry("Swerve/FL", frontLeft)
-        publishModuleTelemetry("Swerve/FR", frontRight)
-        publishModuleTelemetry("Swerve/RL", rearLeft)
-        publishModuleTelemetry("Swerve/RR", rearRight)
-    }
-
-    private fun publishSwerveSimTelemetry(dtSeconds: Double) {
-        SimTelemetry.bool("Swerve/Sim", true)
-
-        SimTelemetry.pose("Swerve/Sim/Pose", simpose)
-        SimTelemetry.num("Swerve/Sim/YawDeg", simyaw.degrees)
-
-        SimTelemetry.wheelVel(
-            "Swerve/Sim/Cmd",
-            commandedSpeeds.vxMetersPerSecond,
-            commandedSpeeds.vyMetersPerSecond,
-            commandedSpeeds.omegaRadiansPerSecond
+        // Encoder + angle telemetry from IO
+        TelemetryRouter.wheelEncoders(
+            swerveInputs.fl.drivePosMeters, swerveInputs.fr.drivePosMeters,
+            swerveInputs.rl.drivePosMeters, swerveInputs.rr.drivePosMeters,
+            swerveInputs.fl.driveVelMps, swerveInputs.fr.driveVelMps,
+            swerveInputs.rl.driveVelMps, swerveInputs.rr.driveVelMps
         )
 
-        // “Module states” in sim are not computed currently; if you want them,
-        // we can derive them from kinematics using commandedSpeeds.
-
-        SimTelemetry.speedMPS(
-            "Swerve/Sim/SpeedMPS",
-            SimState.simFLVel,
-            SimState.simFRVel,
-            SimState.simRLVel,
-            SimState.simRRVel
-        )
-
-        SimTelemetry.wheelEncoders(
-            "Swerve/Sim/Encoders",
-            SimState.simFL, SimState.simFR, SimState.simRL, SimState.simRR,
-            SimState.simFLVel, SimState.simFRVel, SimState.simRLVel, SimState.simRRVel
-        )
-
-        SimTelemetry.angleDeg(
-            "Swerve/Sim/AzimuthDeg",
-            SimState.simFLAngleDeg,
-            SimState.simFRAngleDeg,
-            SimState.simRLAngleDeg,
-            SimState.simRRAngleDeg
-        )
-
-        SimTelemetry.poseCompare(
-            "Swerve/Sim/PoseCompare",
-            SimState.groundTruthPose,
-            simpose
+        TelemetryRouter.angleDeg(
+            Math.toDegrees(swerveInputs.fl.turnPosRad),
+            Math.toDegrees(swerveInputs.fr.turnPosRad),
+            Math.toDegrees(swerveInputs.rl.turnPosRad),
+            Math.toDegrees(swerveInputs.rr.turnPosRad)
         )
     }
 
     override fun periodic() {
+        TelemetryRouter.setBase(
+            if (isSim) "${robotType.name}/Sim" else robotType.name
+        )
 
-        val positions = if (isSim) simModulePositions() else allModulePositions
-
-
-        odometry.update(getHeading(), positions)
-        poseEstimator.update(getHeading(), positions)
+        gyroIO.updateInputs(gyroInputs)
+        swerveIO.updateInputs(swerveInputs)
 
         if (!isSim) {
+            val positions = modulePositionsFromInputs()
+            odometry.update(getHeading(), positions)
+            poseEstimator.update(getHeading(), positions)
+
             val estimate = estimatedRobotPose
             SmartDashboard.putBoolean("Swerve/Vision/HasEstimate", estimate != null)
-
             if (estimate != null) {
                 poseEstimator.addVisionMeasurement(
                     estimate.estimatedPose.toPose2d(),
                     estimate.timestampSeconds
                 )
-        }
-            publishSwerveTelemetry()
-        }
-
-    }
-    // -- Commands --
-
-    override fun drive(xSpeed: Double, ySpeed: Double, rot: Double, fieldRelative: Boolean) {
-
-        val speedX = xSpeed
-        val speedY = ySpeed
-        val speedAngular = rot
-
-        // -- Simulation Swerve Logic --
-        val speeds =
-            if (fieldRelative) {
-                ChassisSpeeds.fromFieldRelativeSpeeds(
-                        speedX, speedY, speedAngular, getHeading()
-                )
-            } else {
-                ChassisSpeeds(speedX, speedY, speedAngular)
             }
 
-        commandedSpeeds = speeds
-        if (isSim) return
-
-        // -- Swerve Logic --
-        val swerveStates =
-            kinematics.toSwerveModuleStates(
-                if (fieldRelative) {
-                    ChassisSpeeds.fromFieldRelativeSpeeds(
-                        speedX,
-                        speedY,
-                        speedAngular,
-                        rotation
-                    )
-                } else {
-                    ChassisSpeeds(speedX, speedY, speedAngular)
-                },
-            )
-
-        SwerveDriveKinematics.desaturateWheelSpeeds(
-            swerveStates,
-            maxLinearSpeedMps
-        )
-
-        allModules.forEachIndexed { i, module -> module.desiredState = swerveStates[i] }
+            publishSwerveTelemetry()
+        }
     }
 
-    fun driveRelative(chassisSpeeds: ChassisSpeeds) {
-        val desiredStates = kinematics.toSwerveModuleStates(chassisSpeeds)
+    // -- Commands --
 
-        allModules.forEachIndexed { i, module -> module.desiredState = desiredStates[i] }
+        override fun drive(xSpeed: Double, ySpeed: Double, rot: Double, fieldRelative: Boolean) {
+            val speeds =
+                if (fieldRelative) {
+                    ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, rot, getHeading())
+                } else {
+                    ChassisSpeeds(xSpeed, ySpeed, rot)
+                }
+
+            commandedSpeeds = speeds
+            if (isSim) gyroIO.setSimOmegaRadPerSec(speeds.omegaRadiansPerSecond)
+
+            val states = kinematics.toSwerveModuleStates(speeds)
+            SwerveDriveKinematics.desaturateWheelSpeeds(states, maxLinearSpeedMps)
+
+            swerveIO.setModuleStates(states[0], states[1], states[2], states[3])
+        }
+
+    fun driveRelative(chassisSpeeds: ChassisSpeeds) {
+        commandedSpeeds = chassisSpeeds
+        val desiredStates = kinematics.toSwerveModuleStates(chassisSpeeds)
+        SwerveDriveKinematics.desaturateWheelSpeeds(desiredStates, maxLinearSpeedMps)
+        swerveIO.setModuleStates(desiredStates[0], desiredStates[1], desiredStates[2], desiredStates[3])
     }
 
     override fun buildAutoChooser(): SendableChooser<Command> {
@@ -406,13 +277,11 @@ class SwerveDriveSubsystem :  Drivetrain() {
                 //poseSupplier =
                 { poseEstimator.estimatedPosition },
                 //resetPose =
-                { pose ->
-                    odometry.resetPosition(rotation, allModulePositions, pose)
-                    poseEstimator.resetPose(pose) },
+                { pose -> resetPose(pose) },
                 // IntelliJ is off its rocker here. The spread operator works here, is practically required, and compiles.
                 // The following error should be ignored, since there is no way to remove/hide it.
                 //robotRelativeSpeedsSupplier =
-                { kinematics.toChassisSpeeds(*allModuleStates) },
+                { kinematics.toChassisSpeeds(*moduleStatesFromInputs()) },
                 //output =
                 this::driveRelative,
                 //controller =
@@ -435,89 +304,26 @@ class SwerveDriveSubsystem :  Drivetrain() {
             }
     }
 
-    private fun stepAngleDeg(current: Double, target: Double, maxRate: Double, dt: Double): Double {
-        val error = MathUtil.angleModulus(target - current)
-        val delta = error.coerceIn(-maxRate * dt, maxRate * dt)
-        return current + delta
-    }
-
     // -- Simulation --
     private var commandedSpeeds = ChassisSpeeds()
 
-    private fun simModulePositions(): Array<SwerveModulePosition> {
-        val states = kinematics.toSwerveModuleStates(commandedSpeeds)
-        SwerveDriveKinematics.desaturateWheelSpeeds(
-            states,
-            maxLinearSpeedMps
-        )
-        return arrayOf(
-            SwerveModulePosition(SimState.simFL, states[0].angle),
-            SwerveModulePosition(SimState.simFR, states[1].angle),
-            SwerveModulePosition(SimState.simRL, states[2].angle),
-            SwerveModulePosition(SimState.simRR,states[3].angle)
-        )
-    }
 
     override fun simulationPeriodic(dtSeconds: Double) {
         if (!isSim) return
 
-        val dx = commandedSpeeds.vxMetersPerSecond * dtSeconds
-        val dy = commandedSpeeds.vyMetersPerSecond * dtSeconds
-        val dtheta = commandedSpeeds.omegaRadiansPerSecond * dtSeconds
+        swerveIO.simulationPeriodic(dtSeconds)
+        gyroIO.simulationPeriodic(dtSeconds)
 
-        val newYawTruth = simyaw.plus(Rotation2d(dtheta))
+        // Refresh inputs AFTER sim step
+        gyroIO.updateInputs(gyroInputs)
+        swerveIO.updateInputs(swerveInputs)
 
-        // yaw rate (deg/sec) for gyro sim
-        val yawRateDegPerSecTruth = Math.toDegrees(commandedSpeeds.omegaRadiansPerSecond)
+        // Now update odometry/estimator using the simulated sensors
+        val positions = modulePositionsFromInputs()
+        odometry.update(getHeading(), positions)
+        poseEstimator.update(getHeading(), positions)
 
-        // Update sim sensor drift/bias
-        SimSensors.setTrueYaw(newYawTruth, yawRateDegPerSecTruth)
-        SimSensors.update(dtSeconds)
-
-        val states = kinematics.toSwerveModuleStates(commandedSpeeds)
-        SwerveDriveKinematics.desaturateWheelSpeeds(
-            states,
-            maxLinearSpeedMps
-        )
-
-        SimState.simFLVel = states[0].speedMetersPerSecond
-        SimState.simFRVel = states[1].speedMetersPerSecond
-        SimState.simRLVel = states[2].speedMetersPerSecond
-        SimState.simRRVel = states[3].speedMetersPerSecond
-
-        SimState.simFLAngleDeg = stepAngleDeg(SimState.simFLAngleDeg, states[0].angle.degrees, 720.0, dtSeconds)
-        SimState.simFRAngleDeg = stepAngleDeg(SimState.simFRAngleDeg, states[1].angle.degrees, 720.0, dtSeconds)
-        SimState.simRLAngleDeg = stepAngleDeg(SimState.simRLAngleDeg, states[2].angle.degrees, 720.0, dtSeconds)
-        SimState.simRRAngleDeg = stepAngleDeg(SimState.simRRAngleDeg, states[3].angle.degrees, 720.0, dtSeconds)
-
-        SimState.simFL += SimState.simFLVel * dtSeconds
-        SimState.simFR += SimState.simFRVel * dtSeconds
-        SimState.simRL += SimState.simRLVel * dtSeconds
-        SimState.simRR += SimState.simRRVel * dtSeconds
-
-        simyaw = newYawTruth
-        val fieldDelta = Translation2d(dx, dy).rotateBy(simyaw.minus(Rotation2d(dtheta)))
-        simpose = Pose2d(simpose.translation + fieldDelta, simyaw)
-
-        // Build "measured" module positions + measured gyro
-        val yawMeas = SimSensors.measuredYaw()
-
-        val positionMeas = arrayOf(
-            SwerveModulePosition(SimState.simFL + 0.0, states[0].angle),
-            SwerveModulePosition(SimState.simFR + 0.0, states[1].angle),
-            SwerveModulePosition(SimState.simRL + 0.0, states[2].angle),
-            SwerveModulePosition(SimState.simRR + 0.0, states[3].angle),
-        )
-
-        // Update odometry/poseEstimator with MEASURED sensors
-        odometry.update(yawMeas, positionMeas)
-        poseEstimator.update(yawMeas, positionMeas)
-
-        // Store for comparison widgets
-        SimState.groundTruthPose = simpose
-        simpose = poseEstimator.estimatedPosition
-
-        publishSwerveSimTelemetry(dtSeconds)
+        publishSwerveTelemetry()
     }
 
     override fun getPose(): Pose2d = if (isSim) odometry.poseMeters else poseEstimator.estimatedPosition

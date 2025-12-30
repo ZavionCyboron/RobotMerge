@@ -1,30 +1,47 @@
 package org.hangar84.robot2026.subsystems
 
-import com.revrobotics.spark.SparkBase.PersistMode
-import com.revrobotics.spark.SparkBase.ResetMode
-import com.revrobotics.spark.SparkLowLevel.MotorType
-import com.revrobotics.spark.SparkMax
-import com.revrobotics.spark.config.SparkMaxConfig
-import edu.wpi.first.wpilibj2.command.Subsystem
+import edu.wpi.first.wpilibj.RobotBase
+import edu.wpi.first.wpilibj2.command.Commands
+import edu.wpi.first.wpilibj2.command.SubsystemBase
+import org.hangar84.robot2026.io.MechanisimIO
+import org.hangar84.robot2026.telemetry.TelemetryRouter
 
-object LauncherSubsystem : Subsystem {
-    private val leftController = SparkMax(9, MotorType.kBrushed)
-    private val rightController = SparkMax(10, MotorType.kBrushed)
+class LauncherSubsystem(val io: MechanisimIO) : SubsystemBase() {
+
+    private val inputs = MechanisimIO.Inputs()
+
+    private val isSim = RobotBase.isSimulation()
 
     // - Commands -
     internal val LAUNCH_COMMAND
-        get() = runOnce { leftController.set(1.0) }
+        get() = Commands.runOnce({ io.setPercent(1.0)}, this)
 
     internal val INTAKE_COMMAND
-        get() = runOnce { leftController.set(-1.0) }
+        get() = Commands.runOnce({ io.setPercent(-1.0)}, this)
 
     internal val STOP_COMMAND
-        get() = runOnce { leftController.set(0.0) }
+        get() = Commands.runOnce({ io.stop() }, this)
 
-    init {
-        val rightMotorConfig = SparkMaxConfig()
-        rightMotorConfig.follow(leftController)
-        rightMotorConfig.inverted(true)
-        rightController.configure(rightMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters)
+    override fun periodic() {
+        TelemetryRouter.setBase(
+            if (isSim) {
+                "Launcher/Sim"
+            } else {
+                "Launcher"
+            }
+        )
+
+        io.updateInputs(inputs)
+
+        // Optional telemetry (uses only inputs)
+        TelemetryRouter.launcher(
+            inputs.leftAppliedOutput, inputs.rightAppliedOutput,
+            inputs.leftVelocityRpm, inputs.rightVelocityRpm,
+            inputs.leftCurrentAmps, inputs.rightCurrentAmps
+        )
+    }
+
+    override fun simulationPeriodic() {
+        io.simulationPeriodic(0.02)
     }
 }

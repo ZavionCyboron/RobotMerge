@@ -14,20 +14,27 @@ import edu.wpi.first.wpilibj2.command.InstantCommand
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController
 import org.hangar84.robot2026.commands.driveCommand
 import org.hangar84.robot2026.constants.RobotType
+import org.hangar84.robot2026.io.GyroIO
+import org.hangar84.robot2026.io.MecanumIO
+import org.hangar84.robot2026.io.SwerveIO
+import org.hangar84.robot2026.io.real.AdisGyroIO
+import org.hangar84.robot2026.io.real.MaxSwerveIO
+import org.hangar84.robot2026.io.real.RevMecanumIO
+import org.hangar84.robot2026.io.real.RevMechanisimIO
+import org.hangar84.robot2026.io.sim.SimGyroIO
+import org.hangar84.robot2026.io.sim.SimMecanumIO
+import org.hangar84.robot2026.io.sim.SimMechanismIO
+import org.hangar84.robot2026.io.sim.SimSwerveIO
+import org.hangar84.robot2026.sim.*
 import org.hangar84.robot2026.sim.SimClock.dtSeconds
 import org.hangar84.robot2026.sim.SimField.publishOnce
 import org.hangar84.robot2026.sim.SimField.setRobotPose
-import org.hangar84.robot2026.sim.SimHooks
-import org.hangar84.robot2026.sim.SimRobotTypeSelector
-import org.hangar84.robot2026.sim.SimSensors
-import org.hangar84.robot2026.sim.SimState
 import org.hangar84.robot2026.sim.SimState.isSim
 import org.hangar84.robot2026.subsystems.Drivetrain
 import org.hangar84.robot2026.subsystems.LauncherSubsystem
 import org.hangar84.robot2026.subsystems.MecanumDriveSubsystem
 import org.hangar84.robot2026.subsystems.SwerveDriveSubsystem
-import org.hangar84.robot2026.telemetry.SimTelemetry
-import org.hangar84.robot2026.telemetry.Telemetry
+import org.hangar84.robot2026.telemetry.TelemetryRouter
 import kotlin.math.withSign
 
 
@@ -35,6 +42,10 @@ object RobotContainer {
     private const val DRIVEDEADBAND = 0.08
     private val controller: CommandXboxController = CommandXboxController(0)
     private val buttonA = DigitalInput(19)
+
+    val launcher = LauncherSubsystem(
+        if (RobotBase.isSimulation()) SimMechanismIO() else RevMechanisimIO()
+    )
 
     private fun readBootSelector(): RobotType {
         return if (!buttonA.get()) {
@@ -53,8 +64,17 @@ object RobotContainer {
 
     // The robot's subsystems
     val drivetrain: Drivetrain = when (robotType) {
-        RobotType.SWERVE -> SwerveDriveSubsystem()
-        RobotType.MECANUM -> MecanumDriveSubsystem()
+        RobotType.SWERVE -> {
+            val gyro: GyroIO = if (isSim) SimGyroIO() else AdisGyroIO()
+            val swerve: SwerveIO = if (isSim) SimSwerveIO() else MaxSwerveIO()
+            SwerveDriveSubsystem(swerve, gyro)
+        }
+
+        RobotType.MECANUM -> {
+            val gyro: GyroIO = if (isSim) SimGyroIO() else AdisGyroIO()
+            val mecanum: MecanumIO = if (isSim) SimMecanumIO() else RevMecanumIO()
+            MecanumDriveSubsystem(mecanum, gyro)
+        }
     }
     // The driver's controller
 
@@ -67,13 +87,21 @@ object RobotContainer {
 
 
     init {
+        TelemetryRouter.setBase(
+            if (isSim) {
+                "${robotType.name}/Sim"
+            } else {
+                robotType.name
+            }
+        )
+
         if (isSim) {
             // ***
             // make sure to uncomment the one you want to use
             // and to comment the one that was previously used so there is no conflictions
             // ***
 
-            //SimField.leftBluePose()
+            SimField.leftBluePose()
 
             //SimField.middleBluePose()
 
@@ -102,9 +130,9 @@ object RobotContainer {
     }
     private fun configureBindings() {
 
-        val xLimiter = SlewRateLimiter(3.0)   // m/s^2 style feel
-        val yLimiter = SlewRateLimiter(3.0)
-        val rotLimiter = SlewRateLimiter(6.0) // rad/s^2 feel (or deg/s^2)
+        val xLimiter = SlewRateLimiter(5.0)   // m/s^2 style feel
+        val yLimiter = SlewRateLimiter(5.0)
+        val rotLimiter = SlewRateLimiter(2.0) // rad/s^2 feel (or deg/s^2)
 
         fun shapedAxis(raw: Double): Double {
             val db = MathUtil.applyDeadband(raw, DRIVEDEADBAND)
@@ -114,8 +142,8 @@ object RobotContainer {
         if (robotType == RobotType.MECANUM) {
             drivetrain.defaultCommand =  driveCommand(
                 drivetrain,
-                { xLimiter.calculate(shapedAxis(-controller.leftX)) },
-                { yLimiter.calculate(shapedAxis(-controller.leftY)) },
+                { xLimiter.calculate(shapedAxis(-controller.leftY)) },
+                { yLimiter.calculate(shapedAxis(-controller.leftX)) },
                 { rotLimiter.calculate(shapedAxis(-controller.rightX)) },
                 { false }
             )
@@ -127,15 +155,16 @@ object RobotContainer {
                 drivetrain,
                 { xLimiter.calculate(shapedAxis(-controller.leftY)) * maxV},
                 { yLimiter.calculate(shapedAxis(-controller.leftX)) * maxV },
-                { rotLimiter.calculate(shapedAxis(controller.rightX)) * maxW},
+                { rotLimiter.calculate(shapedAxis(-controller.rightX)) * maxW},
                 { true }
             )
-            val swerve = drivetrain as SwerveDriveSubsystem
-            controller.leftBumper().whileTrue(swerve.PARK_COMMAND)
+            (drivetrain as? SwerveDriveSubsystem)?.let { swerve ->
+                controller.leftBumper().whileTrue(swerve.PARK_COMMAND)
+            }
         }
 
-        controller.leftTrigger().onTrue(LauncherSubsystem.INTAKE_COMMAND).onFalse(LauncherSubsystem.STOP_COMMAND)
-        controller.rightTrigger().onTrue(LauncherSubsystem.LAUNCH_COMMAND).onFalse(LauncherSubsystem.STOP_COMMAND)
+        controller.leftTrigger().onTrue(launcher.INTAKE_COMMAND).onFalse(launcher.STOP_COMMAND)
+        controller.rightTrigger().onTrue(launcher.LAUNCH_COMMAND).onFalse(launcher.STOP_COMMAND)
     }
 
     // -- Simulation --
@@ -153,9 +182,10 @@ object RobotContainer {
             val truth = SimState.groundTruthPose
             val est = SimState.estimatedPose
 
-            SimTelemetry.pose("Sim/Pose/Truth", truth)
-            SimTelemetry.pose("Sim/Pose/Estimated", est)
-            SimTelemetry.poseError("Sim/Pose/Error", truth, est)
+            TelemetryRouter.pose(truth)
+            TelemetryRouter.pose(est)
+            TelemetryRouter.poseError(truth, est)
+            TelemetryRouter.poseCompare(truth, est)
         }
     }
 
@@ -176,15 +206,14 @@ object RobotContainer {
                 if (dt > 1e-6) deltaDeg / dt else 0.0
             }
         if (isSim) {
-            SimTelemetry.gyroTrue(
-                "Sim/TrueGyro",
+            TelemetryRouter.gyroTrue(
                 SimSensors.trueYaw,
                 SimSensors.measuredYaw(),
                 SimSensors.trueYawRateDegPerSec
             )
-            SimTelemetry.gyro("Sim/Gyro", yaw, yawRateDegPerSec)
+            TelemetryRouter.gyro(yaw, yawRateDegPerSec)
         } else {
-            Telemetry.gyro("Gyro", yaw, yawRateDegPerSec)
+            TelemetryRouter.gyro(yaw, yawRateDegPerSec)
             SmartDashboard.putNumber("Gyro/PoseYawDeg", drivetrain.getPose().rotation.degrees)
         }
 
