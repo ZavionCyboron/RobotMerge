@@ -62,4 +62,9 @@ class MAXSwerveModule(
 
         drivingController.encoder.position = 0.0
     }
+
+    fun stop() {
+        drivingController.stopMotor()
+        turningController.stopMotor()
+    }
 }
