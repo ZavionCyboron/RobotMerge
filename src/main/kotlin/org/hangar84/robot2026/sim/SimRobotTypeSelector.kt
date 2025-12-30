@@ -16,17 +16,8 @@ object SimRobotTypeSelector {
     private val chooser = SendableChooser<RobotType>().apply {
         setDefaultOption(robotType.name, robotType)
     }
-    private var published = false
-
-    // Publishes the sim robotType SmartDashboard once
-    fun publishOnce() {
-        if (!RobotBase.isSimulation() || published) return
-        SmartDashboard.putData("Sim/RobotType", chooser)
-        published = true
-    }
 
     fun selected(): RobotType {
-        publishOnce()
         return chooser.selected ?: RobotType.SWERVE
     }
 }
