@@ -158,22 +158,6 @@ object TelemetryRouter {
         }
     }
 
-    fun speedMPS(fl: Double, fr: Double, rl: Double, rr: Double) {
-        if (isSim) {
-            if (!shouldPublish("motors")) return
-
-            publish("$base/SpeedMPS/FL", fl)
-            publish("$base/SpeedMPS/FR", fr)
-            publish("$base/SpeedMPS/RL", rl)
-            publish("$base/SpeedMPS/RR", rr)
-
-            SimTelemetry.speedMPS(
-                TelemetryConfig.prefix("motors", "Motors"),
-                fl, fr, rl, rr
-            )
-        } else return
-    }
-
     fun angleDeg(fl: Double, fr: Double, rl: Double, rr: Double) {
         if (isSim) {
             if (!shouldPublish("motors")) return
