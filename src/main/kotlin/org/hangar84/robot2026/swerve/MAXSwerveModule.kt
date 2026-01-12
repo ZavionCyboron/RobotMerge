@@ -1,13 +1,15 @@
 package org.hangar84.robot2026.swerve
 
-import com.revrobotics.spark.SparkBase.*
+import com.revrobotics.PersistMode
+import com.revrobotics.ResetMode
+import com.revrobotics.spark.SparkBase.ControlType
 import com.revrobotics.spark.SparkLowLevel.MotorType
 import com.revrobotics.spark.SparkMax
 import com.revrobotics.spark.config.SparkMaxConfig
+import edu.wpi.first.math.MathUtil
 import edu.wpi.first.math.geometry.Rotation2d
 import edu.wpi.first.math.kinematics.SwerveModulePosition
 import edu.wpi.first.math.kinematics.SwerveModuleState
-import edu.wpi.first.units.Units.Degrees
 import edu.wpi.first.units.measure.Angle
 
 class MAXSwerveModule(
@@ -20,41 +22,41 @@ class MAXSwerveModule(
     internal val drivingController = SparkMax(drivingControllerID, MotorType.kBrushless)
     val turningController = SparkMax(turningControllerID, MotorType.kBrushless)
 
-    var desiredState = SwerveModuleState(0.0, Rotation2d(turningController.absoluteEncoder.position))
-        set(value) {
-            value.angle += Rotation2d(chassisAngularOffset)
 
-            value.optimize(Rotation2d(turningController.absoluteEncoder.position))
+    private fun moduleAngle(): Rotation2d {
+        // absoluteEncoder.position is already radians due to positionConversionFactor(TURNING_FACTOR)
+        val encoderAngle = Rotation2d(turningController.absoluteEncoder.position)
+        return encoderAngle - Rotation2d(chassisAngularOffset)
+    }
 
-            val drivingStatus =
-                drivingController.closedLoopController.setReference(
-                    value.speedMetersPerSecond,
-                    ControlType.kVelocity,
-                )
+    var desiredState = SwerveModuleState(0.0, moduleAngle())
+        set(desired) {
+            val optimized = SwerveModuleState(desired.speedMetersPerSecond, desired.angle)
+            optimized.optimize(moduleAngle())
 
+            drivingController.closedLoopController.setSetpoint(
+                optimized.speedMetersPerSecond,
+                ControlType.kVelocity
+            )
 
-            val turningStatus =
-                turningController.closedLoopController.setReference(
-                    value.angle.radians,
-                    ControlType.kPosition,
-                )
+            // Convert module target back into encoder frame for the turning controller
+            val raw = (optimized.angle + Rotation2d(chassisAngularOffset)).radians
+            val wrapped =
+                 MathUtil.inputModulus(raw, 0.0, 2 * Math.PI)
 
-            field = value
+            turningController.closedLoopController.setSetpoint(
+                wrapped,
+                ControlType.kPosition
+            )
+
+            field = optimized
         }
 
-    val state
-        get() =
-            SwerveModuleState(
-                drivingController.encoder.velocity,
-                Rotation2d(Degrees.of(turningController.absoluteEncoder.position * 360) - chassisAngularOffset),
-            )
+    val state: SwerveModuleState
+        get() = SwerveModuleState(drivingController.encoder.velocity, moduleAngle())
 
-    val position
-        get() =
-            SwerveModulePosition(
-                drivingController.encoder.position,
-                Rotation2d(Degrees.of(turningController.absoluteEncoder.position * 360) - chassisAngularOffset),
-            )
+    val position: SwerveModulePosition
+        get() = SwerveModulePosition(drivingController.encoder.position, moduleAngle())
 
     init {
         drivingController.configure(drivingConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters)

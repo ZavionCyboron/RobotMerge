@@ -1,7 +1,7 @@
 package org.hangar84.robot2026.io.real
 
-import com.revrobotics.spark.SparkBase.PersistMode
-import com.revrobotics.spark.SparkBase.ResetMode
+import com.revrobotics.ResetMode
+import com.revrobotics.PersistMode
 import com.revrobotics.spark.SparkLowLevel.MotorType
 import com.revrobotics.spark.SparkMax
 import com.revrobotics.spark.config.SparkMaxConfig

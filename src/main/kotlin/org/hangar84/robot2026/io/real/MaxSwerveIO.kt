@@ -18,11 +18,16 @@ class MaxSwerveIO : SwerveIO {
         inverted(true)
     }
 
+    private val flDrivingConfig = SparkMaxConfig().apply {
+        apply(drivingConfig)
+        inverted(true)
+    }
+
     private val fl: MAXSwerveModule = MAXSwerveModule(
         Swerve.FRONT_LEFT_DRIVING_ID,
         Swerve.FRONT_LEFT_TURNING_ID,
         Degrees.of(270.0),
-        drivingConfig,
+        flDrivingConfig,
         turningConfig
     )
 
@@ -54,12 +59,11 @@ class MaxSwerveIO : SwerveIO {
     override fun updateInputs(inputs: SwerveIO.Inputs) {
         fun copy(module: MAXSwerveModule, out: SwerveIO.ModuleInputs) {
             val pos = module.position
-            val state = module.desiredState
+            val vel = module.drivingController.encoder.velocity
 
             out.drivePosMeters = pos.distanceMeters
-            out.driveVelMps = state.speedMetersPerSecond
+            out.driveVelMps = vel
             out.turnPosRad = pos.angle.radians
-
             out.turnVelRadPerSec = 0.0
         }
 

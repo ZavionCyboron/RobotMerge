@@ -1,5 +1,7 @@
 package org.hangar84.robot2026.mecanum
 
+import com.revrobotics.PersistMode
+import com.revrobotics.ResetMode
 import com.revrobotics.spark.SparkBase
 import com.revrobotics.spark.SparkLowLevel
 import com.revrobotics.spark.SparkMax
@@ -16,8 +18,8 @@ class MecanumModule(
     init {
         motor.configure(
             motorConfig,
-            SparkBase.ResetMode.kResetSafeParameters,
-            SparkBase.PersistMode.kPersistParameters
+            ResetMode.kResetSafeParameters,
+            PersistMode.kPersistParameters
         )
         encoder.position = 0.0
     }
@@ -25,7 +27,8 @@ class MecanumModule(
     val velocityMeters: Double get() = encoder.velocity
 
     fun setVelocityMps(targetMps: Double) {
-        motor.closedLoopController.setReference(targetMps, SparkBase.ControlType.kVelocity)
+        motor.closedLoopController
+        motor.closedLoopController.setSetpoint(targetMps, SparkBase.ControlType.kVelocity)
     }
     fun stop() = motor.stopMotor()
 }

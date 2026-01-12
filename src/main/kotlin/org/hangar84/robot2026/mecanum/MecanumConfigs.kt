@@ -1,6 +1,6 @@
 package org.hangar84.robot2026.mecanum
 
-import com.revrobotics.spark.config.ClosedLoopConfig
+import com.revrobotics.spark.FeedbackSensor
 import com.revrobotics.spark.config.SparkBaseConfig
 import com.revrobotics.spark.config.SparkMaxConfig
 
@@ -22,8 +22,8 @@ object MecanumConfigs {
             .positionConversionFactor(POSITION_FACTOR_M)
             .velocityConversionFactor(VELOCITY_FACTOR_MPS)
         driveConfig.closedLoop
-            .feedbackSensor(ClosedLoopConfig.FeedbackSensor.kPrimaryEncoder)
-            .pidf(0.0002, 0.0, 0.0, 0.0)
+            .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
+            .pid(0.0002, 0.0, 0.0)
             .outputRange(-1.0, 1.0)
     }
 }
