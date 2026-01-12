@@ -163,15 +163,20 @@ Each pose:
 src/
 ├── main/
 │   ├──deploy/
-│   |   └── pathplanner/
-│   |        ├── autos/           # Autonomous routines
-│   |        ├── paths/           # PathPlanner path files
-│   |        ├── navgrid.json     # Navigation grid
-│   |        └── settings.json    # PathPlanner settings
+│   |   ├── pathplanner/
+│   |   |    ├── autos/           # Autonomous routines
+│   |   |    ├── paths/           # PathPlanner path files
+│   |   |    ├── navgrid.json     # Navigation grid
+│   |   |
+|   |   └── telemetry/
+|   |            └── telemetry.json # Telemetry configuration
 │   └── kotlin/
 │       └── org/hangar84/robot2026/
 │           ├── commands/        # Reusable drive and robot commands
 │           ├── constants/       # Robot constants and configuration values
+│           ├── io/              # Robot hardware interfaces
+│           │    ├── real/       # Actual robot hardware
+│           │    └── sim/        # Simulated robot hardware
 │           ├── mecanum/         # Mecanum drivetrain implementation
 │           ├── sim/             # Custom simulation framework (state, sensors, field)
 │           ├── subsystems/      # Shared subsystem interfaces and implementations
