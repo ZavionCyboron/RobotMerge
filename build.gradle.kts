@@ -9,7 +9,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
     java
     kotlin("jvm") version "2.1.10"
-    id("edu.wpi.first.GradleRIO") version "2025.3.2"
+    id("edu.wpi.first.GradleRIO") version "2026.1.1"
     idea
 }
 
@@ -30,12 +30,10 @@ deploy {
                 setJarTask(tasks.jar)
             }
 
-            register<FileTreeArtifact>("pathplannerDeploy") {
-                files = project.fileTree("src/main/deploy/pathplanner/") {
-                    include("**/*")
-                }
-                directory = "/home/lvuser/deploy"
-                deleteOldFiles = true
+            register<FileTreeArtifact>("frcStaticFileDeploy") {
+                files.set(project.fileTree("src/main/deploy") { include("**/*") })
+                directory.set("/home/lvuser/deploy")
+                deleteOldFiles.set(true)
             }
         }
     }
