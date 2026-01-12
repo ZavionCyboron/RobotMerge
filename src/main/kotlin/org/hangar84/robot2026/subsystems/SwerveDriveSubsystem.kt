@@ -95,10 +95,10 @@ class SwerveDriveSubsystem(
 
     val kinematics =
         SwerveDriveKinematics(
-            Translation2d(WHEEL_BASE / 2.0, TRACK_WIDTH / 2.0),
-            Translation2d(WHEEL_BASE / 2.0, -TRACK_WIDTH / 2.0),
-            Translation2d(-WHEEL_BASE / 2.0, TRACK_WIDTH / 2.0),
-            Translation2d(-WHEEL_BASE / 2.0, -TRACK_WIDTH / 2.0),
+            Translation2d(WHEEL_BASE / 2.0, TRACK_WIDTH / 2.0),  // FL
+            Translation2d(-WHEEL_BASE / 2.0,  TRACK_WIDTH / 2.0),  // FR
+            Translation2d(WHEEL_BASE / 2.0, -TRACK_WIDTH / 2.0), // RL
+            Translation2d(-WHEEL_BASE / 2.0,  -TRACK_WIDTH / 2.0), // RR
         )
 
     private val zeroPositions = arrayOf(
