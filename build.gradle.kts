@@ -9,7 +9,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
     java
     kotlin("jvm") version "2.1.10"
-    id("edu.wpi.first.GradleRIO") version "2026.1.1"
+    id("edu.wpi.first.GradleRIO") version "2026.2.1"
     idea
 }
 
