@@ -10,6 +10,8 @@ import edu.wpi.first.math.geometry.Pose2d
 import edu.wpi.first.math.geometry.Rotation2d
 import edu.wpi.first.math.geometry.Translation2d
 import edu.wpi.first.math.kinematics.*
+import edu.wpi.first.units.Units.Inches
+import edu.wpi.first.units.Units.Meters
 import edu.wpi.first.wpilibj.DriverStation
 import edu.wpi.first.wpilibj.RobotBase
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser
@@ -32,6 +34,14 @@ class MecanumDriveSubsystem(
     // Aren't used but needed so that Drivetrain requirement is met
     override val maxAngularSpeedRadPerSec: Double = 2.0
     override val maxLinearSpeedMps: Double = 3.0
+
+    private val TRACK_WIDTH = Inches.of(23.1875)
+
+    private val WHEEL_BASE = Inches.of(16.125)
+    
+    private val WHEEL_BASE_M = WHEEL_BASE.`in`(Meters)
+    
+    private val TRACK_WIDTH_M = TRACK_WIDTH.`in`(Meters)
 
     private val isSim = RobotBase.isSimulation()
 
@@ -64,10 +74,10 @@ class MecanumDriveSubsystem(
         mecanumInputs.rrVelMps
     )
 
-    private var frontLeftLocation: Translation2d = Translation2d(0.833, 1.200)
-    private var frontRightLocation: Translation2d = Translation2d(0.833, -1.200)
-    private var rearLeftLocation: Translation2d = Translation2d(-0.833, 1.200)
-    private var rearRightLocation: Translation2d = Translation2d(-0.833, -1.200)
+    private var frontLeftLocation: Translation2d = Translation2d(WHEEL_BASE_M / 2.0, TRACK_WIDTH_M / 2.0)
+    private var frontRightLocation: Translation2d = Translation2d(WHEEL_BASE_M / 2.0, -TRACK_WIDTH_M / 2.0)
+    private var rearLeftLocation: Translation2d = Translation2d(-WHEEL_BASE_M / 2.0, TRACK_WIDTH_M / 2.0)
+    private var rearRightLocation: Translation2d = Translation2d(-WHEEL_BASE_M / 2.0, -TRACK_WIDTH_M / 2.0)
 
     private val kinematics: MecanumDriveKinematics = MecanumDriveKinematics(
         frontLeftLocation, frontRightLocation,
@@ -96,7 +106,7 @@ class MecanumDriveSubsystem(
 
     /*private val camera: PhotonCamera =  PhotonCamera("FrontCamera") 
 
-    private val fieldLayout = AprilTagFieldLayout.loadField(AprilTagFields.k2025ReefscapeAndyMark)
+    private val fieldLayout = AprilTagFieldLayout.loadField(AprilTagFields.k2026RebuiltAndyMark)
     private val cameraOffset =
         Transform3d(
             Translation3d(
@@ -111,9 +121,6 @@ class MecanumDriveSubsystem(
         Commands.run(
             { drive(0.0, 0.3, 0.0, false) },
             this).withTimeout(2.5)
-    init {
-
-    }
 
     private fun publishMecanumTelemetry(wheelPositions: MecanumDriveWheelPositions) {
         TelemetryRouter.bool(robotType.name, true)

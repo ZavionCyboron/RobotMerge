@@ -1,56 +1,46 @@
-package org.hangar84.robot2026.io.real
-
-import edu.wpi.first.wpilibj.Compressor
 import edu.wpi.first.wpilibj.PneumaticsModuleType
 import edu.wpi.first.wpilibj.Solenoid
 import org.hangar84.robot2026.io.PneumaticsIO
 
 class CtreTwoValvePnematicsIO(
-    private val moduleId: Int,
-    private val extendChannel: Int,
-    private val retractChannel: Int,
+    pcmCanId: Int,
+    aExtend: Int, aRetract: Int,
+    bExtend: Int, bRetract: Int,
 ) : PneumaticsIO {
 
-    private val compressor = Compressor(moduleId, PneumaticsModuleType.CTREPCM)
-    private val extendValve = Solenoid(moduleId, PneumaticsModuleType.CTREPCM, extendChannel)
-    private val retractValve = Solenoid(moduleId, PneumaticsModuleType.CTREPCM, retractChannel)
+    private val aExt = Solenoid(pcmCanId, PneumaticsModuleType.CTREPCM, aExtend)
+    private val aRet = Solenoid(pcmCanId, PneumaticsModuleType.CTREPCM, aRetract)
 
-    private var state: PneumaticsIO.ActuatorState = PneumaticsIO.ActuatorState.NEUTRAL
+    private val bExt = Solenoid(pcmCanId, PneumaticsModuleType.CTREPCM, bExtend)
+    private val bRet = Solenoid(pcmCanId, PneumaticsModuleType.CTREPCM, bRetract)
 
-    init {
-        compressor.enableDigital()
-    }
+    private var aState = PneumaticsIO.State.NEUTRAL
+    private var bState = PneumaticsIO.State.NEUTRAL
 
-    override fun updateInputs(inputs: PneumaticsIO.Inputs) {
-        inputs.compressorEnabled = compressor.isEnabled
-        inputs.extendSolenoidOn = extendValve.get()
-        inputs.retractSolenoidOn = retractValve.get()
-        inputs.actuatorState = state
-
-        inputs.pressurePsi = null
-    }
-
-    override fun setActuatorState(newState: PneumaticsIO.ActuatorState) {
-        state = newState
-
-        // CRITICAL: never allow both true
-        when (newState) {
-            PneumaticsIO.ActuatorState.EXTEND -> {
-                retractValve.set(false) // vent retract side
-                extendValve.set(true)   // pressurize extend side
-            }
-            PneumaticsIO.ActuatorState.RETRACT -> {
-                extendValve.set(false)  // vent extend side
-                retractValve.set(true)  // pressurize retract side
-            }
-            PneumaticsIO.ActuatorState.NEUTRAL -> {
-                extendValve.set(false)
-                retractValve.set(false)
-            }
+    override fun setA(state: PneumaticsIO.State) {
+        aState = state
+        when (state) {
+            PneumaticsIO.State.EXTEND -> { aRet.set(false); aExt.set(true) }
+            PneumaticsIO.State.RETRACT -> { aExt.set(false); aRet.set(true) }
+            PneumaticsIO.State.NEUTRAL -> { aExt.set(false); aRet.set(false) }
         }
     }
 
-    override fun setCompressorEnabled(enabled: Boolean) {
-        if (enabled) compressor.enableDigital() else compressor.disable()
+    override fun setB(state: PneumaticsIO.State) {
+        bState = state
+        when (state) {
+            PneumaticsIO.State.EXTEND -> { bRet.set(false); bExt.set(true) }
+            PneumaticsIO.State.RETRACT -> { bExt.set(false); bRet.set(true) }
+            PneumaticsIO.State.NEUTRAL -> { bExt.set(false); bRet.set(false) }
+        }
+    }
+
+    override fun updateInputs(inputs: PneumaticsIO.Inputs) {
+        inputs.aState = aState
+        inputs.bState = bState
+        inputs.aExtendOn = aExt.get()
+        inputs.aRetractOn = aRet.get()
+        inputs.bExtendOn = bExt.get()
+        inputs.bRetractOn = bRet.get()
     }
 }

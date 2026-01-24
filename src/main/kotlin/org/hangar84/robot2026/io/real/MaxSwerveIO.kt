@@ -18,7 +18,7 @@ class MaxSwerveIO : SwerveIO {
         inverted(true)
     }
 
-    private val flDrivingConfig = SparkMaxConfig().apply {
+    private val rlDrivingConfig = SparkMaxConfig().apply {
         apply(drivingConfig)
         inverted(true)
     }
@@ -27,7 +27,7 @@ class MaxSwerveIO : SwerveIO {
         Swerve.FRONT_LEFT_DRIVING_ID,
         Swerve.FRONT_LEFT_TURNING_ID,
         Degrees.of(270.0),
-        flDrivingConfig,
+        drivingConfig,
         turningConfig
     )
 

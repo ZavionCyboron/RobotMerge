@@ -51,8 +51,11 @@ class SwerveDriveSubsystem(
     override val maxLinearSpeedMps: Double = MAX_SPEED.`in`(MetersPerSecond)
     override val maxAngularSpeedRadPerSec: Double = MAX_ANGULAR_SPEED.`in`(RadiansPerSecond)
 
-    private val WHEEL_BASE = Inches.of(24.0)
-    private val TRACK_WIDTH = Inches.of(24.5)
+    private val WHEEL_BASE = Inches.of(21.375)
+    private val TRACK_WIDTH = Inches.of(19.50)
+
+    private val WHEEL_BASE_M = WHEEL_BASE.`in`(Meters)
+    private val TRACK_WIDTH_M = TRACK_WIDTH.`in`(Meters)
 
     override fun getHeading(): Rotation2d = gyroInputs.yaw
 
@@ -95,10 +98,10 @@ class SwerveDriveSubsystem(
 
     val kinematics =
         SwerveDriveKinematics(
-            Translation2d(WHEEL_BASE / 2.0, TRACK_WIDTH / 2.0),  // FL
-            Translation2d(-WHEEL_BASE / 2.0,  TRACK_WIDTH / 2.0),  // FR
-            Translation2d(WHEEL_BASE / 2.0, -TRACK_WIDTH / 2.0), // RL
-            Translation2d(-WHEEL_BASE / 2.0,  -TRACK_WIDTH / 2.0), // RR
+            Translation2d(WHEEL_BASE_M / 2.0, TRACK_WIDTH_M / 2.0),  // FL
+            Translation2d(WHEEL_BASE_M / 2.0,  -TRACK_WIDTH_M / 2.0),  // FR
+            Translation2d(-WHEEL_BASE_M / 2.0, TRACK_WIDTH_M / 2.0), // RL
+            Translation2d(-WHEEL_BASE_M / 2.0,  -TRACK_WIDTH_M / 2.0), // RR
         )
 
     private val zeroPositions = arrayOf(
@@ -119,7 +122,7 @@ class SwerveDriveSubsystem(
 
     private val camera = PhotonCamera("FrontCamera")
 
-    private val fieldLayout = AprilTagFieldLayout.loadField(AprilTagFields.k2025ReefscapeAndyMark)
+    private val fieldLayout = AprilTagFieldLayout.loadField(AprilTagFields.k2026RebuiltAndymark)
     private val cameraOffset =
         Transform3d(
             Translation3d(
@@ -141,20 +144,15 @@ class SwerveDriveSubsystem(
     private val photonEstimator: PhotonPoseEstimator =
         PhotonPoseEstimator(
             fieldLayout,
-            PhotonPoseEstimator.PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
             cameraOffset
         )
 
 
     private val estimatedRobotPose: EstimatedRobotPose?
-        get() {
-            var estimate: EstimatedRobotPose? = null
-            camera.allUnreadResults.forEach {
-                estimate = photonEstimator.update(it).getOrNull()
-            }
-
-            return estimate
-        }
+        get() = camera.allUnreadResults
+            .asSequence()
+            .mapNotNull { photonEstimator.estimateLowestAmbiguityPose(it).getOrNull() }
+            .firstOrNull()
 
     // - Static Commands -
     internal val PARK_COMMAND: Command = Commands.run({
@@ -263,7 +261,6 @@ class SwerveDriveSubsystem(
     }
 
     override fun buildAutoChooser(): SendableChooser<Command> {
-        if (isSim) return SendableChooser<Command>()
 
         val robotConfig = try {
             RobotConfig.fromGUISettings()
@@ -287,9 +284,9 @@ class SwerveDriveSubsystem(
                 //controller =
                 PPHolonomicDriveController(
                     // translationConstants =
-                    PIDConstants(5.0, 0.0, 0.0),
+                    PIDConstants(3.5, 0.0, 0.0),
                     // rotationConstants =
-                    PIDConstants(5.0, 0.0, 0.0),
+                    PIDConstants(4.0, 0.0, 0.1),
                 ),
                 //robotConfig =
                 robotConfig,

@@ -179,7 +179,6 @@ object TelemetryRouter {
         leftAppliedOutput: Double, rightAppliedOutput: Double,
         leftVelocityRpm: Double, rightVelocityRpm: Double,
         leftCurrentAmps: Double, rightCurrentAmps: Double) {
-        if (isSim) {
             if (!shouldPublish("launcher")) return
 
             publish("$base/LeftOutput", leftAppliedOutput)
@@ -189,7 +188,9 @@ object TelemetryRouter {
             publish("$base/LeftCurrent", leftCurrentAmps)
             publish("$base/RightCurrent", rightCurrentAmps)
 
-            SimTelemetry.launcher(TelemetryConfig.prefix("launcher", "Launchers"),
+        if (isSim) {
+            SimTelemetry.launcher(
+                TelemetryConfig.prefix("launcher", "Launchers"),
                 leftAppliedOutput, rightAppliedOutput,
                 leftVelocityRpm, rightVelocityRpm,
                 leftCurrentAmps, rightCurrentAmps
