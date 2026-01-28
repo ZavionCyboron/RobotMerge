@@ -217,7 +217,9 @@ class SwerveDriveSubsystem(
             { DriverStation.getAlliance().getOrNull() == DriverStation.Alliance.Red },
             this
         )
-        return AutoBuilder.buildAutoChooser()
+        return AutoBuilder.buildAutoChooser().apply {
+            addOption("Drive Forward (Manual)", DRIVE_FORWARD_COMMAND)
+        }
     }
 
     override fun simulationPeriodic(dtSeconds: Double) {
