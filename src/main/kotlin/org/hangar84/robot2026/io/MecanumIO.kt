@@ -12,7 +12,17 @@ interface MecanumIO {
         var flVelMps: Double = 0.0,
         var frVelMps: Double = 0.0,
         var rlVelMps: Double = 0.0,
-        var rrVelMps: Double = 0.0
+        var rrVelMps: Double = 0.0,
+
+        var flCurrentAmps: Double = 0.0,
+        var frCurrentAmps: Double = 0.0,
+        var rlCurrentAmps: Double = 0.0,
+        var rrCurrentAmps: Double = 0.0,
+
+        var flAppliedVolts: Double = 0.0,
+        var frAppliedVolts: Double = 0.0,
+        var rlAppliedVolts: Double = 0.0,
+        var rrAppliedVolts: Double = 0.0
     )
 
     fun updateInputs(inputs: Inputs)
