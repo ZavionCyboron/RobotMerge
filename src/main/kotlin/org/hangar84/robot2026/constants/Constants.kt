@@ -10,6 +10,13 @@ object Constants {
         const val B_RETRACT_CHANNEL = 2// solenoid channel
     }
 
+    object Intake {const val Intake_Motor = 13}
+
+    object Launcher {
+        const val Launcher_Left_Motor = 15
+        const val Launcher_Right_Motor = 16
+    }
+
     object Mecanum {
         const val FRONT_LEFT_ID = 9
         const val FRONT_RIGHT_ID = 10

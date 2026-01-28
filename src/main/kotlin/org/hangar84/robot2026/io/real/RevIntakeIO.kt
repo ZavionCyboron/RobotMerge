@@ -12,7 +12,7 @@ import org.hangar84.robot2026.io.IntakeIO
 import org.hangar84.robot2026.constants.Constants.Intake
 
 class RevIntakeIO : IntakeIO {
-    private val leftIntake = SparkMax(Intake.Intake_Motor_ID, MotorType.kBrushed)
+    private val leftIntake = SparkMax(Intake.Intake_Motor, MotorType.kBrushed)
 
     init {
         leftIntake.configure(

@@ -12,8 +12,8 @@ import org.hangar84.robot2026.io.LauncherIO
 
 
 class RevLauncherIO : LauncherIO {
-    private val leftLaunch = SparkMax(Launcher.Left_Launcher_Motor_ID, MotorType.kBrushed)
-    private val rightLaunch = SparkMax(Launcher.Right_Launcher_Motor_ID, MotorType.kBrushed)
+    private val leftLaunch = SparkMax(Launcher.Launcher_Left_Motor, MotorType.kBrushed)
+    private val rightLaunch = SparkMax(Launcher.Launcher_Right_Motor, MotorType.kBrushed)
 
     init {
         val rightCfg = SparkMaxConfig().apply {
