@@ -64,6 +64,7 @@ object RobotContainer {
     val pneumatics = PneumaticsSubsystem(pneumaticsIO)
 
     private fun registerPathplannerEvents() {
+        NamedCommands.registerCommand("Intake",intake.INTAKE_COMMAND)
         NamedCommands.registerCommand(
             "OctupleLaunch",
             Commands.sequence(
@@ -102,7 +103,7 @@ object RobotContainer {
 
     val robotType: RobotType =
         if (RobotBase.isSimulation()) {
-            SimRobotTypeSelector.selected()
+            RobotType.MECANUM
         } else {
             readBootSelector()
         }
@@ -143,22 +144,7 @@ object RobotContainer {
         )
 
         if (isSim) {
-            // ***
-            // make sure to uncomment the one you want to use
-            // and to comment the one that was previously used so there is no conflictions
-            // ***
-
             SimField.leftBluePose()
-
-            //SimField.middleBluePose()
-
-            //SimField.rightBluePose()
-
-            //SimField.rightRedPose()
-
-            //SimField.middleRedPose()
-
-            //SimField.leftRedPose()
         }
 
         registerPathplannerEvents()
@@ -229,9 +215,23 @@ object RobotContainer {
     }
 
     fun periodic() {
-        val pose = drivetrain.getPose()
+        val pose = drivetrain.getPose() // Fused orientation and position
         setRobotPose(pose)
         publishGyroWidgets()
+
+        // --- Robot Orientation & Linear Velocity ---
+        val table = edu.wpi.first.networktables.NetworkTableInstance.getDefault()
+            .getTable("RobotState")
+
+        // Robot Orientation (Degrees)
+        table.getEntry("GlobalOrientation").setDouble(pose.rotation.degrees)
+
+        // Linear Velocity (Meters per Second)
+        val speeds = drivetrain.getChassisSpeeds() // Ensure your Drivetrain interface has this
+        val totalLinearSpeed = Math.hypot(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond)
+
+        table.getEntry("LinearVelocityMps").setDouble(totalLinearSpeed)
+        table.getEntry("RotationSpeedDegPerSec").setDouble(Math.toDegrees(speeds.omegaRadiansPerSecond))
 
         if (isSim) {
             val truth = SimState.groundTruthPose
