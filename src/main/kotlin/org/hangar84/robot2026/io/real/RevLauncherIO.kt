@@ -7,11 +7,13 @@ import com.revrobotics.spark.SparkMax
 import com.revrobotics.spark.config.SparkMaxConfig
 import edu.wpi.first.wpilibj.DriverStation
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard
+import org.hangar84.robot2026.constants.Constants.Launcher
 import org.hangar84.robot2026.io.LauncherIO
 
+
 class RevLauncherIO : LauncherIO {
-    private val leftLaunch = SparkMax(15, MotorType.kBrushed)
-    private val rightLaunch = SparkMax(16, MotorType.kBrushed)
+    private val leftLaunch = SparkMax(Launcher.Left_Launcher_Motor_ID, MotorType.kBrushed)
+    private val rightLaunch = SparkMax(Launcher.Right_Launcher_Motor_ID, MotorType.kBrushed)
 
     init {
         val rightCfg = SparkMaxConfig().apply {
@@ -26,15 +28,24 @@ class RevLauncherIO : LauncherIO {
     override fun setPercent(percent: Double) {
         leftLaunch.set(percent)
         rightLaunch.set(percent)
-        DriverStation.reportWarning("Launch Set = $percent", false)
-        SmartDashboard.putString("Debug/LauncherCmd", "set=$percent")
-        // right follows
     }
 
     override fun updateInputs(inputs: LauncherIO.Inputs) {
-        inputs.leftAppliedOutput = leftLaunch.appliedOutput
-        inputs.rightAppliedOutput = rightLaunch.appliedOutput
-        inputs.leftCurrentAmps = leftLaunch.outputCurrent
-        inputs.rightCurrentAmps = rightLaunch.outputCurrent
+
+        val leftLauncherMotorVolts = leftLaunch.busVoltage
+        val rightLauncherMotorVolts = rightLaunch.busVoltage
+
+        val leftLauncherMotorAppliedVolts = inputs.leftAppliedOutput * leftLauncherMotorVolts
+        val rightLauncherMotorAppliedVolts = inputs.rightAppliedOutput * rightLauncherMotorVolts
+
+        SmartDashboard.putNumber("Launcher Left CurrentAmps", inputs.leftCurrentAmps)
+        SmartDashboard.putNumber("Launcher Left AppliedVolts", leftLauncherMotorAppliedVolts)
+        SmartDashboard.putNumber("Launcher Left TempCelsius", leftLaunch.motorTemperature)
+
+        SmartDashboard.putNumber("Launcher Right CurrentAmps", inputs.rightCurrentAmps)
+        SmartDashboard.putNumber("Launcher Right AppliedVolts", rightLauncherMotorAppliedVolts)
+        SmartDashboard.putNumber("Launcher Right TempCelsius", rightLaunch.motorTemperature)
+
+        SmartDashboard.putNumber("SystemBusVoltage", leftLauncherMotorVolts)
     }
 }
