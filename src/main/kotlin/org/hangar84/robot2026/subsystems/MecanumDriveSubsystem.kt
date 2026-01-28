@@ -10,6 +10,7 @@ import edu.wpi.first.math.geometry.Pose2d
 import edu.wpi.first.math.geometry.Rotation2d
 import edu.wpi.first.math.geometry.Translation2d
 import edu.wpi.first.math.kinematics.*
+import edu.wpi.first.networktables.NetworkTableInstance
 import edu.wpi.first.units.Units.Inches
 import edu.wpi.first.units.Units.Meters
 import edu.wpi.first.wpilibj.DriverStation
@@ -29,18 +30,21 @@ import org.hangar84.robot2026.io.MecanumIO.Inputs as mecanumInputs
 class MecanumDriveSubsystem(
     private val mecanumIO: MecanumIO,
     private val gyroIO: GyroIO
+
 ) :  Drivetrain() {
 
     // Aren't used but needed so that Drivetrain requirement is met
     override val maxAngularSpeedRadPerSec: Double = 2.0
     override val maxLinearSpeedMps: Double = 3.0
 
+    override fun getChassisSpeeds(): ChassisSpeeds = chassisSpeedsFromInputs
+
     private val TRACK_WIDTH = Inches.of(23.1875)
 
     private val WHEEL_BASE = Inches.of(16.125)
-    
+
     private val WHEEL_BASE_M = WHEEL_BASE.`in`(Meters)
-    
+
     private val TRACK_WIDTH_M = TRACK_WIDTH.`in`(Meters)
 
     private val isSim = RobotBase.isSimulation()
@@ -104,19 +108,6 @@ class MecanumDriveSubsystem(
         VecBuilder.fill(1.0, 1.0, 1.0), // Vision standard deviations
     )
 
-    /*private val camera: PhotonCamera =  PhotonCamera("FrontCamera") 
-
-    private val fieldLayout = AprilTagFieldLayout.loadField(AprilTagFields.k2026RebuiltAndyMark)
-    private val cameraOffset =
-        Transform3d(
-            Translation3d(
-                Inches.of(-8.0),
-                Inches.of(9.0),
-                Inches.of(12.0),
-            ),
-            Rotation3d(0.0, 0.0, 0.0),
-        )*/
-
     private val DRIVE_FORWARD_COMMAND: Command =
         Commands.run(
             { drive(0.0, 0.3, 0.0, false) },
@@ -136,13 +127,45 @@ class MecanumDriveSubsystem(
             mecanumInputs.flVelMps, mecanumInputs.frVelMps,
             mecanumInputs.rlVelMps, mecanumInputs.rrVelMps)
 
-        // --- Chassis speeds (very useful to confirm math) ---
+        // --- Chassis speeds ---
         val cs = chassisSpeedsFromInputs
         TelemetryRouter.chassisVel(
             cs.vxMetersPerSecond,
             cs.vyMetersPerSecond,
             cs.omegaRadiansPerSecond
         )
+
+        // --- Swerve-Style Visualization & Power Data ---
+        val table = NetworkTableInstance.getDefault().getTable("MecanumDrive")
+        table.getEntry(".type").setString("SwerveDrive")
+
+        val currentSpeeds = wheelSpeedsFromInputs()
+        val measuredData = doubleArrayOf(
+            0.0, currentSpeeds.frontLeftMetersPerSecond,
+            0.0, currentSpeeds.frontRightMetersPerSecond,
+            0.0, currentSpeeds.rearLeftMetersPerSecond,
+            0.0, currentSpeeds.rearRightMetersPerSecond
+        )
+        table.getEntry("ModuleStates").setDoubleArray(measuredData)
+        table.getEntry("RobotRotation").setDouble(getHeading().degrees)
+
+        // Wheel Speeds
+        val dataTable = table.getSubTable("ModuleData")
+        dataTable.getEntry("FL_Speed").setDouble(mecanumInputs.flVelMps)
+        dataTable.getEntry("FR_Speed").setDouble(mecanumInputs.frVelMps)
+        dataTable.getEntry("RL_Speed").setDouble(mecanumInputs.rlVelMps)
+        dataTable.getEntry("RR_Speed").setDouble(mecanumInputs.rrVelMps)
+
+        // Power and Voltage
+        val powerTable = table.getSubTable("Power")
+        powerTable.getEntry("FL_Amps").setDouble(mecanumInputs.flCurrentAmps)
+        powerTable.getEntry("FL_Volts").setDouble(mecanumInputs.flAppliedVolts)
+        powerTable.getEntry("FR_Amps").setDouble(mecanumInputs.frCurrentAmps)
+        powerTable.getEntry("FR_Volts").setDouble(mecanumInputs.frAppliedVolts)
+        powerTable.getEntry("RL_Amps").setDouble(mecanumInputs.rlCurrentAmps)
+        powerTable.getEntry("RL_Volts").setDouble(mecanumInputs.rlAppliedVolts)
+        powerTable.getEntry("RR_Amps").setDouble(mecanumInputs.rrCurrentAmps)
+        powerTable.getEntry("RR_Volts").setDouble(mecanumInputs.rrAppliedVolts)
     }
 
     override fun periodic() {
@@ -151,15 +174,12 @@ class MecanumDriveSubsystem(
         gyroIO.updateInputs(gyroInputs)
         mecanumIO.updateInputs(mecanumInputs)
 
-        // On real robot, update odometry here
-        if (!isSim) {
-            val positions = wheelPositionsFromInputs()
-            odometry.update(getHeading(), positions)
-            poseEstimator.update(getHeading(), positions)
-        }
+        // Update odometry/pose estimator in periodic for real and sim
+        val positions = wheelPositionsFromInputs()
+        odometry.update(getHeading(), positions)
+        poseEstimator.update(getHeading(), positions)
 
-        // Telemetry works in both because it uses IO inputs
-        publishMecanumTelemetry(wheelPositionsFromInputs())
+        publishMecanumTelemetry(positions)
     }
 
     private fun normalizeMecanum(w: MecanumDriveWheelSpeeds, max: Double): MecanumDriveWheelSpeeds {
@@ -226,30 +246,16 @@ class MecanumDriveSubsystem(
             }
         }
         AutoBuilder.configure(
-            // poseSupplier =
-            { poseEstimator.estimatedPosition},
-            // resetPose =
-            { pose ->
-                resetPose(pose)
-            },
-            // IntelliJ is off its rocker here. The spread operator works here, is practically required, and compiles.
-            // The following error should be ignored, since there is no way to remove/hide it.
-            // robotRelativeSpeedsSupplier =
+            { poseEstimator.estimatedPosition },
+            { pose -> resetPose(pose) },
             { chassisSpeedsFromInputs },
-            // output =
             this::driveRelative,
-            // controller =
             PPHolonomicDriveController(
-                // translationConstants =
                 PIDConstants(5.0, 0.0, 0.0),
-                // rotationConstants =
                 PIDConstants(5.0, 0.0, 0.0),
             ),
-            // robotConfig =
             robotConfig,
-            // shouldFlipPath =
             { DriverStation.getAlliance().getOrNull() == DriverStation.Alliance.Red },
-            // ...driveRequirements =
             this,
         )
 
@@ -265,15 +271,6 @@ class MecanumDriveSubsystem(
 
         mecanumIO.simulationPeriodic(dtSeconds)
         gyroIO.simulationPeriodic(dtSeconds)
-
-        gyroIO.updateInputs(gyroInputs)
-        mecanumIO.updateInputs(mecanumInputs)
-
-        val positions = wheelPositionsFromInputs()
-        odometry.update(getHeading(), positions)
-        poseEstimator.update(getHeading(), positions)
-
-        publishMecanumTelemetry(positions)
     }
 
     override fun getPose(): Pose2d = poseEstimator.estimatedPosition
