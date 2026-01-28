@@ -7,7 +7,19 @@
         {
           "type": "path",
           "data": {
-            "pathName": "Start to Funnel"
+            "pathName": "Start To Intake"
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 2.0
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Intake To Hub"
           }
         },
         {
@@ -19,7 +31,7 @@
         {
           "type": "path",
           "data": {
-            "pathName": "Funnel To Climb"
+            "pathName": "Hub To Climb"
           }
         },
         {

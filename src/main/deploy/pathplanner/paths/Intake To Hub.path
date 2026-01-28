@@ -3,29 +3,29 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 3.527,
-        "y": 3.991
+        "x": 0.3174668230960742,
+        "y": 6.16590361445783
       },
       "prevControl": null,
       "nextControl": {
-        "x": 3.322507118211753,
-        "y": 4.134814676921161
+        "x": 0.6748158193639079,
+        "y": 6.071529604792292
       },
-      "isLocked": true,
-      "linkedName": null
+      "isLocked": false,
+      "linkedName": "Intake "
     },
     {
       "anchor": {
-        "x": 1.418325301204819,
+        "x": 3.527,
         "y": 3.991
       },
       "prevControl": {
-        "x": 2.53444266393113,
-        "y": 3.897877144766588
+        "x": 3.789657751234028,
+        "y": 3.9070779025633597
       },
       "nextControl": null,
-      "isLocked": true,
-      "linkedName": null
+      "isLocked": false,
+      "linkedName": "Hub"
     }
   ],
   "rotationTargets": [],
@@ -33,13 +33,13 @@
   "pointTowardsZones": [],
   "eventMarkers": [
     {
-      "name": "Lift",
+      "name": "OctupleLaunch",
       "waypointRelativePos": 1.0,
       "endWaypointRelativePos": null,
       "command": {
         "type": "named",
         "data": {
-          "name": "Lift"
+          "name": "OctupleLaunch"
         }
       }
     }
@@ -54,7 +54,7 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": 177.97863505964403
+    "rotation": -179.2355821774337
   },
   "reversed": false,
   "folder": null,
