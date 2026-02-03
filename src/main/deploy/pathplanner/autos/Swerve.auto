@@ -11,15 +11,27 @@
           }
         },
         {
+          "type": "named",
+          "data": {
+            "name": "Intake"
+          }
+        },
+        {
           "type": "wait",
           "data": {
-            "waitTime": 2.0
+            "waitTime": 0.75
           }
         },
         {
           "type": "path",
           "data": {
             "pathName": "Intake To Hub"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "OctupleLaunch"
           }
         },
         {
@@ -35,9 +47,15 @@
           }
         },
         {
+          "type": "named",
+          "data": {
+            "name": "Lift"
+          }
+        },
+        {
           "type": "wait",
           "data": {
-            "waitTime": 0.75
+            "waitTime": 5.0
           }
         },
         {
