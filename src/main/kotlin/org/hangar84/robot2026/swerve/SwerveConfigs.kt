@@ -26,7 +26,7 @@ data object SwerveConfigs {
 
         drivingConfig
             .idleMode(IdleMode.kBrake)
-            .smartCurrentLimit(50)
+            .smartCurrentLimit(40)
         drivingConfig.encoder
             .positionConversionFactor(DRIVING_FACTOR) // meters
             .velocityConversionFactor(DRIVING_FACTOR / 60.0) // meters per second
