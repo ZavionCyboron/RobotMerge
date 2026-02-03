@@ -2,8 +2,10 @@ package org.hangar84.robot2026.telemetry
 
 import edu.wpi.first.math.geometry.Pose2d
 import edu.wpi.first.math.geometry.Rotation2d
+import edu.wpi.first.networktables.NetworkTable
+import edu.wpi.first.networktables.NetworkTableEntry
+import edu.wpi.first.networktables.NetworkTableInstance
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard
-
 object SimTelemetry {
     fun pose(prefix: String, pose: Pose2d) {
         SmartDashboard.putNumber("$prefix/X", pose.x)
@@ -66,36 +68,6 @@ object SimTelemetry {
         SmartDashboard.putNumber("$prefix/TrueYawDeg", trueYaw.degrees)
         SmartDashboard.putNumber("$prefix/MeasuredYawDeg", yaw.degrees)
         SmartDashboard.putNumber("$prefix/TrueYawRateDegPerSec", trueYawRateDegPerSec)
-    }
-
-    fun launcher(
-        prefix: String,
-        leftAppliedOutput: Double, rightAppliedOutput: Double,
-        leftVelocityRpm: Double, rightVelocityRpm: Double,
-        leftCurrentAmps: Double, rightCurrentAmps: Double) {
-        SmartDashboard.putNumber("$prefix/LeftOutput", leftAppliedOutput)
-        SmartDashboard.putNumber("$prefix/RightOutput", rightAppliedOutput)
-        SmartDashboard.putNumber("$prefix/LeftRPM", leftVelocityRpm)
-        SmartDashboard.putNumber("$prefix/RightRPM", rightVelocityRpm)
-        SmartDashboard.putNumber("$prefix/LeftCurrent", leftCurrentAmps)
-        SmartDashboard.putNumber("$prefix/RightCurrent", rightCurrentAmps)
-    }
-
-    fun pneumatics(
-        prefix: String,
-        compresserEnabled: Boolean,
-        actuatorState: String,
-        extendOn: Boolean,
-        retractOn: Boolean,
-        pressurePsi: Double?
-    ) {
-        SmartDashboard.putString("$prefix/ActuatorState", actuatorState)
-        SmartDashboard.putBoolean("$prefix/ExtendOn", extendOn)
-        SmartDashboard.putBoolean("$prefix/RetractOn", retractOn)
-        SmartDashboard.putBoolean("$prefix/CompresorEnabled", compresserEnabled)
-        if (pressurePsi != null) {
-            SmartDashboard.putNumber("$prefix/PSI", pressurePsi)
-        }
     }
     fun num(key: String, value: Double) = SmartDashboard.putNumber(key, value)
     fun bool(key: String, value: Boolean) = SmartDashboard.putBoolean(key, value)
