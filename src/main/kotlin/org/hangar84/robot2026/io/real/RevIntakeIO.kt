@@ -15,11 +15,10 @@ class RevIntakeIO : IntakeIO {
     private val leftIntake = SparkMax(Intake.Intake_Motor, MotorType.kBrushed)
 
     init {
-        leftIntake.configure(
-            SparkMaxConfig(),
-            ResetMode.kResetSafeParameters,
-            PersistMode.kPersistParameters
-        )
+        val config = SparkMaxConfig().apply {
+            smartCurrentLimit(20)
+        }
+        leftIntake.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters)
     }
 
     override fun setPercent(percent: Double) {
@@ -27,13 +26,8 @@ class RevIntakeIO : IntakeIO {
     }
 
     override fun updateInputs(inputs: IntakeIO.Inputs) {
+        inputs.leftAppliedOutput = leftIntake.appliedOutput
         inputs.leftCurrentAmps = leftIntake.outputCurrent
-
-        val busVoltage = leftIntake.busVoltage
-        val motorVoltage = inputs.leftAppliedOutput * busVoltage
-
-        SmartDashboard.putNumber("Intake AppliedVoltage", motorVoltage)
-        SmartDashboard.putNumber("Intake CurrentAmps", inputs.leftCurrentAmps)
-        SmartDashboard.putNumber("Intake TemperatureCelsius", leftIntake.motorTemperature)
+        inputs.leftTempCelcius = leftIntake.motorTemperature
     }
 }
