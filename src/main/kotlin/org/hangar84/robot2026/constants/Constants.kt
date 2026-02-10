@@ -2,15 +2,22 @@ package org.hangar84.robot2026.constants
 
 object Constants {
 
-    object Pneumatics {
-        const val PCM_CAN_ID = 0          // <-- your CTRE PCM CAN ID
-        const val A_EXTEND_CHANNEL = 0      // solenoid channel
-        const val A_RETRACT_CHANNEL = 1
-        const val B_EXTEND_CHANNEL = 3      // solenoid channel
-        const val B_RETRACT_CHANNEL = 2// solenoid channel
+    object Hinge {
+        const val Hinge_Motor = 18
     }
 
-    object Intake {const val Intake_Motor = 13}
+    object Pneumatics {
+        const val REVPH_CAN_ID = 17          // <-- your REVPH CanID
+        const val A_EXTEND_CHANNEL = 0      // solenoid channel
+        const val A_RETRACT_CHANNEL = 1
+        const val B_EXTEND_CHANNEL = 2      // solenoid channel
+        const val B_RETRACT_CHANNEL = 3// solenoid channel
+    }
+
+    object Intake {
+        const val Left_Intake_Motor = 13
+        const val Right_Intake_Motor = 14
+    }
 
     object Launcher {
         const val Launcher_Left_Motor = 15
