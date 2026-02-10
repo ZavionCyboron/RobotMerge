@@ -2,7 +2,6 @@ package org.hangar84.robot2026.telemetry
 
 import edu.wpi.first.wpilibj.Filesystem
 import java.nio.file.Files
-import kotlin.io.path.Path
 
 data class TelemetryJson(
     val enabled: Map<String, Boolean> = emptyMap(),
@@ -14,15 +13,12 @@ object TelemetryConfig {
     private const val REL_PATH = "telemetry/telemetry.json"
 
     // Simple + dependency-free JSON parse (minimal)
-    // If you already use a JSON lib, tell me and I’ll swap this to Gson/Jackson.
     private fun readTextOrNull(): String? {
         val deploy = Filesystem.getDeployDirectory().toPath()
         val file = deploy.resolve(REL_PATH)
         return if (Files.exists(file)) Files.readString(file) else null
     }
 
-    // Tiny “good enough” parser for your simple structure.
-    // Supports the exact schema shown above.
     private fun parse(json: String): TelemetryJson {
         fun section(name: String): String? {
             val idx = json.indexOf("\"$name\"")
