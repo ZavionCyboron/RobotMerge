@@ -1,7 +1,5 @@
 package org.hangar84.robot2026.subsystems
 
-import edu.wpi.first.networktables.GenericEntry
-import edu.wpi.first.networktables.NetworkTableInstance
 import edu.wpi.first.wpilibj2.command.Command
 import edu.wpi.first.wpilibj2.command.Commands
 import edu.wpi.first.wpilibj2.command.SubsystemBase
@@ -12,72 +10,79 @@ import org.hangar84.robot2026.telemetry.TelemetryRouter
 class PneumaticsSubsystem(private val io: PneumaticsIO) : SubsystemBase() {
 
     private val inputs = PneumaticsIO.Inputs()
-    private val PneumaticsTable = NetworkTableInstance.getDefault().getTable("Mechanism/Pneumatics")
-    private val Extend_Left: GenericEntry = PneumaticsTable.getTopic("Extend Left").getGenericEntry()
-    private val Extend_Right: GenericEntry = PneumaticsTable.getTopic("Extend Right").getGenericEntry()
-    private val Enable_Compressor: GenericEntry = PneumaticsTable.getTopic("Enable Compressor").getGenericEntry()
-
-    private val isLeftSelectedEntry: GenericEntry = PneumaticsTable.getTopic("Selection/IsLeftSelected").getGenericEntry()
-    private val isRightSelectedEntry: GenericEntry = PneumaticsTable.getTopic("Selection/IsRightSelected").getGenericEntry()
-    private val isBothSelectedEntry: GenericEntry = PneumaticsTable.getTopic("Selection/IsBothSelected").getGenericEntry()
-    private val selectionNameEntry: GenericEntry = PneumaticsTable.getTopic("Selection/Selection").getGenericEntry()
-    private val systemEnabledEntry: GenericEntry = PneumaticsTable.getTopic("Selection/System Enabled").getGenericEntry()
-
-    private var pneumaticsEnabled = true
     enum class Selection { LEFT, RIGHT, BOTH }
     private var currentSelection = Selection.BOTH
+    private val isLeftSelected get() =
+        currentSelection == Selection.LEFT || currentSelection == Selection.BOTH
+
+    private val isRightSelected get() =
+        currentSelection == Selection.RIGHT || currentSelection == Selection.BOTH
+
+    private val isBothSelected get() =
+        currentSelection == Selection.BOTH
+
     private var systemEnabled = true
 
+    private val f = false
+
     init {
-            Extend_Left.setBoolean(false)
-            Trigger { Extend_Left.getBoolean(false) }
-                .whileTrue(extendACommand())
-                .onFalse(retractACommand()) // Correct
+        TelemetryRouter.Pneumatics.Extend_Left.setBoolean(f)
+        TelemetryRouter.Pneumatics.Extend_Right.setBoolean(f)
+        TelemetryRouter.Pneumatics.Extend_Both.setBoolean(f)
+        TelemetryRouter.Pneumatics.setCompressor.setBoolean(f)
+        Trigger { TelemetryRouter.Pneumatics.Extend_Left.getBoolean(f) }
+            .whileTrue(extendACommand().onlyIf { systemEnabled })
+            .onFalse(retractACommand())
 
-            Extend_Right.setBoolean(false)
-            Trigger { Extend_Right.getBoolean(false) }
-                .whileTrue(extendBCommand())
-                .onFalse(retractBCommand())
+        Trigger{ TelemetryRouter.Pneumatics.Extend_Right.getBoolean(f) }
+            .whileTrue(extendBCommand().onlyIf { systemEnabled })
+            .onFalse(retractBCommand())
 
-            Enable_Compressor.setBoolean(true) // Default to ON
-            Trigger { Enable_Compressor.getBoolean(true) }
-                .onTrue(enableCompressorCommand())
-                .onFalse(disableCompressorCommand())
+        Trigger{ TelemetryRouter.Pneumatics.Extend_Both.getBoolean(f) }
+            .whileTrue(extendBothCommand().onlyIf { systemEnabled })
+            .onFalse(retractBothCommand())
 
-        selectionNameEntry.setString(currentSelection.name)
-        systemEnabledEntry.setBoolean(systemEnabled)
+        Trigger{ TelemetryRouter.Pneumatics.setCompressor.getBoolean(f) }
+            .whileTrue(enableCompressorCommand().onlyIf { systemEnabled })
+            .onFalse(disableCompressorCommand())
     }
+
     override fun periodic() {
         io.updateInputs(inputs)
 
-        isLeftSelectedEntry.setBoolean(currentSelection == Selection.LEFT)
-        isRightSelectedEntry.setBoolean(currentSelection == Selection.RIGHT)
-        isBothSelectedEntry.setBoolean(currentSelection == Selection.BOTH)
-        selectionNameEntry.setString(currentSelection.name)
-        systemEnabledEntry.setBoolean(systemEnabled)
-
-        TelemetryRouter.Phneumatics(
+        TelemetryRouter.Pneumatics.pneumatics(
             inputs.CompressorEnabled, // Pass the table reference here
             inputs.Left_Solenoid_Extend,
             inputs.Left_Solenoid_Retract,
             inputs.Right_Solenoid_Extend,
             inputs.Right_Solenoid_Retract,
+            isLeftSelected,
+            isRightSelected,
+            isBothSelected,
+            currentSelection.name,
+            systemEnabled
         )
     }
 
     fun setCompressor(enabled: Boolean) = io.setCompressor(enabled)
 
     fun enableCompressorCommand(): Command = Commands.runOnce({ setCompressor(true) }, this)
-    fun disableCompressorCommand(): Command = Commands.runOnce({ setCompressor(false) }, this)
+    fun disableCompressorCommand(): Command = Commands.runOnce({ setCompressor(f) }, this)
 
     fun setSystemEnabled(enabled: Boolean) {
         systemEnabled = enabled
-        systemEnabledEntry.setBoolean(enabled)
+        if (enabled)
+            TelemetryRouter.Pneumatics.setCompressor.setBoolean(true)
+        else
+            TelemetryRouter.Pneumatics.setCompressor.setBoolean(f)
+            TelemetryRouter.Pneumatics.Extend_Left.setBoolean(f)
+            TelemetryRouter.Pneumatics.Extend_Right.setBoolean(f)
+            TelemetryRouter.Pneumatics.Extend_Both.setBoolean(f)
+
     }
 
     fun setSelection(selection: Selection) {
         currentSelection = selection
-        selectionNameEntry.setString(selection.name)
     }
 
     fun cycleSelection() {
@@ -148,7 +153,7 @@ class PneumaticsSubsystem(private val io: PneumaticsIO) : SubsystemBase() {
 
     fun extendBoth() = setBoth(PneumaticsIO.State.EXTEND)
     fun retractBoth() = setBoth(PneumaticsIO.State.RETRACT)
-    fun neutralBoth() = setBoth(PneumaticsIO.State.NEUTRAL)
+    //fun neutralBoth() = setBoth(PneumaticsIO.State.NEUTRAL)
 
     fun toggleBoth() {
         val bothExtended =
@@ -169,5 +174,5 @@ class PneumaticsSubsystem(private val io: PneumaticsIO) : SubsystemBase() {
 
     fun extendBothCommand(): Command = Commands.runOnce({ extendBoth() }, this)
     fun retractBothCommand(): Command = Commands.runOnce({ retractBoth() }, this)
-    fun toggleBothCommand(): Command = Commands.runOnce({ toggleBoth() }, this)
+    //fun toggleBothCommand(): Command = Commands.runOnce({ toggleBoth() }, this)
 }

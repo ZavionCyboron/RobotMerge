@@ -169,7 +169,6 @@ class SwerveDriveSubsystem(
         val currentStates = moduleStatesFromInputs()
 
         TelemetryRouter.bool(robotType.name, true)
-        TelemetryRouter.num("${robotType.name}/YawDeg", getHeading().degrees)
         TelemetryRouter.pose(pose)
 
         val table = NetworkTableInstance.getDefault().getTable("SwerveDrive")
@@ -177,24 +176,29 @@ class SwerveDriveSubsystem(
 
         val measuredData = DoubleArray(8)
         for (i in 0..3) {
-            measuredData[i * 2] = formatAngle(currentStates[i].angle.degrees)
+            val cleanAngle = currentStates[i].angle.degrees
+            measuredData[i * 2] = cleanAngle
             measuredData[i * 2 + 1] = currentStates[i].speedMetersPerSecond
         }
-        table.getEntry("ModuleStates").setDoubleArray(measuredData)
+        TelemetryRouter.SwerveDrive.moduleStates(measuredData)
 
-        val dataTable = table.getSubTable("ModuleData")
         val names = arrayOf("FL", "FR", "RL", "RR")
         for (i in 0..3) {
             val cleanAngle = formatAngle(currentStates[i].angle.degrees)
-            dataTable.getEntry("${names[i]}_Angle_Deg").setDouble(cleanAngle)
-            dataTable.getEntry("${names[i]}_Speed_Mps").setDouble(currentStates[i].speedMetersPerSecond)
+            TelemetryRouter.SwerveDrive.data(
+                "${names[i]} Angle Deg",
+                "${names[i]} Speed Mps",
+                angle = cleanAngle,
+                currentStates[i].speedMetersPerSecond
+            )
         }
 
-        val powerTable = table.getSubTable("Power")
-        val inputs = arrayOf(swerveInputs.fl, swerveInputs.fr, swerveInputs.rl, swerveInputs.rr)
         for (i in 0..3) {
-            powerTable.getEntry("${names[i]}_Drive_Amps").setDouble(inputs[i].driveCurrentAmps)
-            powerTable.getEntry("${names[i]}_Volts").setDouble(inputs[i].driveAppliedVolts)
+            TelemetryRouter.SwerveDrive.power(
+                "${names[i]} Drive Amps",
+                "${names[i]} Volts",
+                i
+            )
         }
 
         // 4. Standard Telemetry Router Helpers
@@ -228,7 +232,7 @@ class SwerveDriveSubsystem(
     }
 
     override fun buildAutoChooser(): SendableChooser<Command> {
-        val robotConfig = try { RobotConfig.fromGUISettings() } catch (e: Exception) {
+        val robotConfig = try { RobotConfig.fromGUISettings() } catch (_: Exception) {
             return SendableChooser<Command>().apply { setDefaultOption("Drive Forward", DRIVE_FORWARD_COMMAND) }
         }
 

@@ -1,7 +1,5 @@
 package org.hangar84.robot2026.subsystems
 
-import edu.wpi.first.networktables.GenericEntry
-import edu.wpi.first.networktables.NetworkTableInstance
 import edu.wpi.first.wpilibj.RobotBase
 import edu.wpi.first.wpilibj.smartdashboard.Mechanism2d
 import edu.wpi.first.wpilibj.smartdashboard.MechanismLigament2d
@@ -11,7 +9,7 @@ import edu.wpi.first.wpilibj2.command.Commands
 import edu.wpi.first.wpilibj2.command.SubsystemBase
 import edu.wpi.first.wpilibj2.command.button.Trigger
 import org.hangar84.robot2026.io.IntakeIO
-import org.hangar84.robot2026.telemetry.TelemetryRouter
+import org.hangar84.robot2026.telemetry.TelemetryRouter.Intake
 
 class IntakeSubsystem(val io: IntakeIO) : SubsystemBase() {
 
@@ -25,14 +23,10 @@ class IntakeSubsystem(val io: IntakeIO) : SubsystemBase() {
         MechanismLigament2d("Flywheel", 1.0, 0.0, 6.0, Color8Bit(0, 255, 0))
     )
 
-    private val IntakeTable = NetworkTableInstance.getDefault().getTable("Mechanism/Intake")
-    private val Intake_Switch: GenericEntry = IntakeTable.getTopic("Intake Switch").getGenericEntry()
-    private val Intake_State: GenericEntry = IntakeTable.getTopic("Intake State").getGenericEntry()
-
     init {
-        Intake_State.setBoolean(false)
-        Intake_Switch.setBoolean(false)
-        Trigger { Intake_Switch.getBoolean(false) }
+        Intake.Intake_State.setBoolean(false)
+        Intake.Intake_Switch.setBoolean(false)
+        Trigger { Intake.Intake_Switch.getBoolean(false) }
             .whileTrue(INTAKE_COMMAND)
     }
 
@@ -41,11 +35,11 @@ class IntakeSubsystem(val io: IntakeIO) : SubsystemBase() {
         get() = Commands.startEnd(
             {
                 io.setPercent(-1.0)
-                Intake_State.setBoolean(true)
+                Intake.Intake_State.setBoolean(true)
             },
             {
                 io.stop()
-                Intake_State.setBoolean(false)
+                Intake.Intake_State.setBoolean(false)
             },
             this
         )
@@ -60,7 +54,7 @@ class IntakeSubsystem(val io: IntakeIO) : SubsystemBase() {
             SmartDashboard.putData("Mechanism 2D/Intake Visualizer", mech)
         }
 
-        TelemetryRouter.Intake(
+        Intake.intake(
             inputs.leftAppliedOutput,
             inputs.leftCurrentAmps,
             inputs.leftTempCelcius
