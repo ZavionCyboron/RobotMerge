@@ -12,7 +12,7 @@ import edu.wpi.first.wpilibj2.command.Commands
 import edu.wpi.first.wpilibj2.command.InstantCommand
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController
 import org.hangar84.robot2026.commands.driveCommand
-import org.hangar84.robot2026.constants.Constants
+import org.hangar84.robot2026.constants.ConfigLoader
 import org.hangar84.robot2026.constants.RobotType
 import org.hangar84.robot2026.io.GyroIO
 import org.hangar84.robot2026.io.MecanumIO
@@ -38,24 +38,39 @@ object RobotContainer {
     private val controller: CommandXboxController = CommandXboxController(0)
     private val buttonA = DigitalInput(19)
 
+    private fun readBootSelector(): RobotType {
+        return if (buttonA.get()) {
+            RobotType.SWERVE
+        } else {
+            RobotType.MECANUM
+        }
+    }
+
+    val robotType: RobotType =
+        if (RobotBase.isSimulation()) {
+            RobotType.SWERVE
+        } else {
+            readBootSelector()
+        }
+
+
+    private val sharedCfg = ConfigLoader.loadShared()
+    private val robotCfg = ConfigLoader.loadPerRobot(robotType)
+
     val launcher = LauncherSubsystem(
-        if (RobotBase.isSimulation()) SimLauncherIO() else RevLauncherIO()
+        if (RobotBase.isSimulation()) SimLauncherIO() else RevLauncherIO(sharedCfg.launcher, sharedCfg.max_config)
     )
     val hinge = HingeSubsystem(
-        if (isSim) SimHingeIO() else RevHingeIO()
+        if (isSim) SimHingeIO() else RevHingeIO(sharedCfg.hinge, sharedCfg.max_config)
     )
     val Intake = IntakeSubsystem(
-        if (RobotBase.isSimulation()) SimIntakeIO() else RevIntakeIO()
+        if (RobotBase.isSimulation()) SimIntakeIO() else RevIntakeIO(sharedCfg.intake, sharedCfg.max_config)
     )
 
     val pneumaticsIO: PneumaticsIO =
         if (isSim) SimPneumaticsIO()
         else CtreTwoValvePneumaticsIO(
-            Constants.Pneumatics.REVPH_CAN_ID,
-            Constants.Pneumatics.A_EXTEND_CHANNEL,
-            Constants.Pneumatics.A_RETRACT_CHANNEL,
-            Constants.Pneumatics.B_EXTEND_CHANNEL,
-            Constants.Pneumatics.B_RETRACT_CHANNEL,
+            sharedCfg.pneumatics
         )
 
     val pneumatics = PneumaticsSubsystem(pneumaticsIO)
@@ -87,35 +102,19 @@ object RobotContainer {
         NamedCommands.registerCommand("Lift", pneumatics.extendBothCommand())
         NamedCommands.registerCommand("Retract", pneumatics.retractBothCommand())
     }
-
-    private fun readBootSelector(): RobotType {
-        return if (buttonA.get()) {
-            RobotType.SWERVE
-        } else {
-            RobotType.MECANUM
-        }
-    }
-
-    val robotType: RobotType =
-        if (RobotBase.isSimulation()) {
-            RobotType.SWERVE
-        } else {
-            readBootSelector()
-        }
-
     // The robot's subsystems
     val drivetrain: Drivetrain = when (robotType) {
         RobotType.SWERVE -> {
             val gyro: GyroIO = if (isSim) SimGyroIO() else AdisGyroIO().apply {
                 setYawAdjustmentDegrees(90.0)
             }
-            val swerve: SwerveIO = if (isSim) SimSwerveIO() else MaxSwerveIO()
+            val swerve: SwerveIO = if (isSim) SimSwerveIO() else MaxSwerveIO(robotCfg.swerve, sharedCfg.max_config)
             SwerveDriveSubsystem(swerve, gyro)
         }
 
         RobotType.MECANUM -> {
             val gyro: GyroIO = if (isSim) SimGyroIO() else AdisGyroIO()
-            val mecanum: MecanumIO = if (isSim) SimMecanumIO() else RevMecanumIO()
+            val mecanum: MecanumIO = if (isSim) SimMecanumIO() else RevMecanumIO(robotCfg.mecanum, sharedCfg.max_config)
             MecanumDriveSubsystem(mecanum, gyro)
         }
     }

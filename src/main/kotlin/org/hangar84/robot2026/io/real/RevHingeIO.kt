@@ -5,18 +5,21 @@ import com.revrobotics.ResetMode
 import com.revrobotics.spark.SparkLowLevel.MotorType
 import com.revrobotics.spark.SparkMax
 import com.revrobotics.spark.config.SparkMaxConfig
-import org.hangar84.robot2026.constants.Constants.Hinge
+import org.hangar84.robot2026.constants.Hinge
+import org.hangar84.robot2026.constants.MaxConfig
 import org.hangar84.robot2026.io.HingeIO
 
-class RevHingeIO: HingeIO {
+class RevHingeIO(cfg: Hinge, maxcfg: MaxConfig): HingeIO {
 
-    private val hinge_Motor = SparkMax(Hinge.Hinge_Motor, MotorType.kBrushed)
+    private val currentLimit = maxcfg.currentLimit
+
+    private val hinge_Motor = SparkMax(cfg.hingeMotorId, MotorType.kBrushed)
 
     private val gearRatio = 75
 
     init {
         val config = SparkMaxConfig().apply {
-            smartCurrentLimit(30)
+            smartCurrentLimit(currentLimit) // 30 amps
         }
         hinge_Motor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters)
     }

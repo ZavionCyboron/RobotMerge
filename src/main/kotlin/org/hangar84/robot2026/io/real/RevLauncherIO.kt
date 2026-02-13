@@ -5,22 +5,26 @@ import com.revrobotics.ResetMode
 import com.revrobotics.spark.SparkLowLevel.MotorType
 import com.revrobotics.spark.SparkMax
 import com.revrobotics.spark.config.SparkMaxConfig
-import org.hangar84.robot2026.constants.Constants.Launcher
 import org.hangar84.robot2026.io.LauncherIO
+import org.hangar84.robot2026.constants.Launcher
+import org.hangar84.robot2026.constants.MaxConfig
 
 
-class RevLauncherIO : LauncherIO {
-    private val leftLaunch = SparkMax(Launcher.Launcher_Left_Motor, MotorType.kBrushless)
-    private val rightLaunch = SparkMax(Launcher.Launcher_Right_Motor, MotorType.kBrushless)
+class RevLauncherIO(cfg: Launcher, maxcfg: MaxConfig) : LauncherIO {
+    private val leftLaunch = SparkMax(cfg.leftLauncherId, MotorType.kBrushless)
+    private val rightLaunch = SparkMax(cfg.rightLauncherId, MotorType.kBrushless)
+
+    private val invertedTrue = maxcfg.inverted
+    private val currentLimit = maxcfg.currentLimit + 10
 
     init {
         val rightCfg = SparkMaxConfig().apply {
-            smartCurrentLimit(50)
-                .inverted(true)
+            smartCurrentLimit(currentLimit) // 40 amps
+                .inverted(invertedTrue) // True
 
         }
         val leftCfg = SparkMaxConfig().apply {
-            smartCurrentLimit(50)
+            smartCurrentLimit(currentLimit) // 40 amps
         }
         leftLaunch.configure(leftCfg, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters)
         rightLaunch.configure(rightCfg, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters)

@@ -2,17 +2,14 @@ package org.hangar84.robot2026.io.real
 import edu.wpi.first.wpilibj.PneumaticHub
 import edu.wpi.first.wpilibj.DoubleSolenoid
 import org.hangar84.robot2026.io.PneumaticsIO
+import org.hangar84.robot2026.constants.Pneumatics
 
-class CtreTwoValvePneumaticsIO(
-    pcmCanId: Int,
-    aExtend: Int, aRetract: Int,
-    bExtend: Int, bRetract: Int,
-) : PneumaticsIO {
+class CtreTwoValvePneumaticsIO(cfg: Pneumatics) : PneumaticsIO {
 
-    private val hub = PneumaticHub(pcmCanId)
+    private val hub = PneumaticHub(cfg.revPHId)
 
-    private val leftDouble = hub.makeDoubleSolenoid(aExtend, aRetract)
-    private val rightDouble = hub.makeDoubleSolenoid(bExtend, bRetract)
+    private val leftDouble = hub.makeDoubleSolenoid(cfg.aExtendChannel, cfg.aRetractChannel)
+    private val rightDouble = hub.makeDoubleSolenoid(cfg.bExtendChannel, cfg.bRetractChannel)
     private var leftState = PneumaticsIO.State.NEUTRAL
     private var rightState = PneumaticsIO.State.NEUTRAL
 

@@ -1,22 +1,24 @@
 package org.hangar84.robot2026.io.real
 
 import com.revrobotics.spark.config.SparkMaxConfig
-import org.hangar84.robot2026.constants.Constants.Mecanum
+import org.hangar84.robot2026.constants.MaxConfig
 import org.hangar84.robot2026.io.MecanumIO
 import org.hangar84.robot2026.mecanum.MecanumConfigs.driveConfig
 import org.hangar84.robot2026.mecanum.MecanumModule
+import org.hangar84.robot2026.constants.Mecanum
 
-class RevMecanumIO : MecanumIO {
+class RevMecanumIO(cfg: Mecanum?, maxcfg: MaxConfig) : MecanumIO {
+    private val invertedTrue = maxcfg.inverted
 
     private val rrConfig: SparkMaxConfig = SparkMaxConfig().apply() {
         apply(driveConfig)
-        inverted(true)
+        inverted(invertedTrue)
     }
 
-    private val fl = MecanumModule("FL", Mecanum.FRONT_LEFT_ID, driveConfig)
-    private val fr = MecanumModule("FR", Mecanum.FRONT_RIGHT_ID, driveConfig)
-    private val rl = MecanumModule("RL", Mecanum.REAR_LEFT_ID, driveConfig)
-    private val rr = MecanumModule("RR", Mecanum.REAR_RIGHT_ID, rrConfig)
+    private val fl = MecanumModule("FL", cfg!!.frontLeftId, driveConfig)
+    private val fr = MecanumModule("FR", cfg!!.frontRightId, driveConfig)
+    private val rl = MecanumModule("RL", cfg!!.rearLeftId, driveConfig)
+    private val rr = MecanumModule("RR", cfg!!.rearRightId, rrConfig)
 
     override fun updateInputs(inputs: MecanumIO.Inputs) {
         // Positions

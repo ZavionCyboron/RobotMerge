@@ -3,52 +3,51 @@ package org.hangar84.robot2026.io.real
 import com.revrobotics.spark.config.SparkMaxConfig
 import edu.wpi.first.math.kinematics.SwerveModuleState
 import edu.wpi.first.units.Units.Degrees
-import org.hangar84.robot2026.constants.Constants.Swerve
+import org.hangar84.robot2026.constants.MaxConfig
+import org.hangar84.robot2026.constants.Swerve
 import org.hangar84.robot2026.io.SwerveIO
 import org.hangar84.robot2026.swerve.MAXSwerveModule
 import org.hangar84.robot2026.swerve.SwerveConfigs.drivingConfig
 import org.hangar84.robot2026.swerve.SwerveConfigs.turningConfig
 
-class MaxSwerveIO : SwerveIO {
+class MaxSwerveIO(cfg: Swerve?, maxcfg: MaxConfig) : SwerveIO {
+
+    private val currentLimit = maxcfg.currentLimit + 10
+    private val invertedTrue = maxcfg.inverted
 
     private val rrDrivingConfig = SparkMaxConfig().apply {
         apply(drivingConfig)
-        inverted(true)
-        smartCurrentLimit(40)
-    }
-
-    private val rlDrivingConfig = SparkMaxConfig().apply {
-        apply(drivingConfig)
-        inverted(true)
+        inverted(invertedTrue) // true
+        smartCurrentLimit(currentLimit) // 40 amps
     }
 
     private val fl: MAXSwerveModule = MAXSwerveModule(
-        Swerve.FRONT_LEFT_DRIVING_ID,
-        Swerve.FRONT_LEFT_TURNING_ID,
+        cfg!!.frontLeftDrivingId,
+        cfg.frontLeftTurningId,
         Degrees.of(270.0),
         drivingConfig,
         turningConfig
     )
 
     private val fr: MAXSwerveModule = MAXSwerveModule(
-        Swerve.FRONT_RIGHT_DRIVING_ID,
-        Swerve.FRONT_RIGHT_TURNING_ID,
+        cfg!!.frontRightDrivingId,
+        cfg.frontRightTurningId,
         Degrees.of(0.0),
         drivingConfig,
         turningConfig
     )
 
     private val rl: MAXSwerveModule = MAXSwerveModule(
-        Swerve.REAR_LEFT_DRIVING_ID,
-        Swerve.REAR_LEFT_TURNING_ID,
+        cfg!!.rearLeftDrivingId,
+        cfg.rearLeftTurningId,
         Degrees.of(180.0),
         drivingConfig,
         turningConfig
     )
 
     private val rr: MAXSwerveModule = MAXSwerveModule(
-        Swerve.REAR_RIGHT_DRIVING_ID,
-        Swerve.REAR_RIGHT_TURNING_ID,
+        cfg!!.rearRightDrivingId,
+        cfg.rearRightTurningId,
         Degrees.of(90.0),
         rrDrivingConfig,
         turningConfig

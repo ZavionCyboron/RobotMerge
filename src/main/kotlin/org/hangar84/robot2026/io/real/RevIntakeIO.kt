@@ -5,20 +5,23 @@ import com.revrobotics.ResetMode
 import com.revrobotics.spark.SparkLowLevel.MotorType
 import com.revrobotics.spark.SparkMax
 import com.revrobotics.spark.config.SparkMaxConfig
-import org.hangar84.robot2026.constants.Constants.Intake
+import org.hangar84.robot2026.constants.Intake
+import org.hangar84.robot2026.constants.MaxConfig
 import org.hangar84.robot2026.io.IntakeIO
 
-class RevIntakeIO : IntakeIO {
-    private val leftIntake = SparkMax(Intake.Left_Intake_Motor, MotorType.kBrushless)
-    private val rightIntake = SparkMax(Intake.Right_Intake_Motor, MotorType.kBrushless)
+class RevIntakeIO(cfg: Intake, maxcfg: MaxConfig) : IntakeIO {
+    private val currentLimit = maxcfg.currentLimit
+    private val invertedTrue = maxcfg.inverted
+    private val leftIntake = SparkMax(cfg.leftIntakeMotorID, MotorType.kBrushless)
+    private val rightIntake = SparkMax(cfg.rightIntakeMotorID, MotorType.kBrushless)
 
     init {
         val leftconfig = SparkMaxConfig().apply {
-            smartCurrentLimit(30)
-                .inverted(true)
+            smartCurrentLimit(currentLimit) // 30 amps
+                .inverted(invertedTrue) // true
         }
         val rightConfig = SparkMaxConfig().apply{
-            smartCurrentLimit(30)
+            smartCurrentLimit(currentLimit)
         }
         leftIntake.configure(leftconfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters)
         rightIntake.configure(rightConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters)
