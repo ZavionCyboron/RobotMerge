@@ -1,0 +1,45 @@
+{
+    "swerve": {
+      "frontLeftDrivingId": 3,
+      "frontLeftTurningId": 4,
+
+      "frontRightDrivingId": 1,
+      "frontRightTurningId": 2,
+
+      "rearLeftDrivingId": 7,
+      "rearLeftTurningId": 6,
+
+      "rearRightDrivingId": 5,
+      "rearRightTurningId": 6
+    },
+    "mecanum": {
+      "frontLeftId": 9,
+      "frontRightId": 10,
+      "rearLeftId": 11,
+      "rearRightId": 12
+    },
+  "shared": {
+    "intake": {
+      "leftIntakeMotorId": 13,
+      "rightIntakeMotorId": 14
+    },
+    "launcher": {
+      "leftLauncherMotorId": 15,
+      "rightLauncherMotorId": 16
+    },
+    "pneumatics": {
+      "revPHId": 17,
+      "aExtendChannel": 0,
+      "aRetractChannel": 1,
+      "bExtendChannel": 2,
+      "bRetractChannel": 3
+    },
+    "hinge": {
+      "hingeMotorId": 18
+    },
+    "max_config": {
+      "inverted": true,
+      "currentLimit": 30
+    }
+  }
+}
