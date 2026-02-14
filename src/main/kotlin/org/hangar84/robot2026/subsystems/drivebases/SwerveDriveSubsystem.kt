@@ -1,4 +1,4 @@
-package org.hangar84.robot2026.subsystems
+package org.hangar84.robot2026.subsystems.drivebases
 
 import com.pathplanner.lib.auto.AutoBuilder
 import com.pathplanner.lib.config.PIDConstants
@@ -22,19 +22,21 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard
 import edu.wpi.first.wpilibj2.command.Command
 import edu.wpi.first.wpilibj2.command.Commands
 import org.hangar84.robot2026.RobotContainer.robotType
-import org.hangar84.robot2026.io.GyroIO
-import org.hangar84.robot2026.io.SwerveIO
+import org.hangar84.robot2026.io.interfaces.drivebaseio.GyroIO
+import org.hangar84.robot2026.io.interfaces.drivebaseio.SwerveIO
+import org.hangar84.robot2026.subsystems.leds.LedSubsystem
 import org.hangar84.robot2026.telemetry.TelemetryRouter
 import org.photonvision.EstimatedRobotPose
 import org.photonvision.PhotonCamera
 import org.photonvision.PhotonPoseEstimator
 import kotlin.jvm.optionals.getOrNull
-import org.hangar84.robot2026.io.GyroIO.Inputs as gyroInputs
-import org.hangar84.robot2026.io.SwerveIO.Inputs as swerveInputs
+import org.hangar84.robot2026.io.interfaces.drivebaseio.GyroIO.Inputs as gyroInputs
+import org.hangar84.robot2026.io.interfaces.drivebaseio.SwerveIO.Inputs as swerveInputs
 
 class SwerveDriveSubsystem(
     private val swerveIO: SwerveIO,
-    private val gyroIO: GyroIO
+    private val gyroIO: GyroIO,
+    private val leds: LedSubsystem
 ): Drivetrain() {
 
     companion object {
@@ -45,6 +47,19 @@ class SwerveDriveSubsystem(
     private val isSim = RobotBase.isSimulation()
     private val gyroInputs = gyroInputs()
     private val swerveInputs = swerveInputs()
+
+    private val anyDriveModuleFaulted =
+        swerveInputs.fl.driveFaulted ||
+        swerveInputs.fr.driveFaulted ||
+        swerveInputs.rl.driveFaulted ||
+        swerveInputs.rr.driveFaulted
+
+    private val anyTurnModuleFaulted =
+                swerveInputs.fl.turnFaulted ||
+                swerveInputs.fr.turnFaulted ||
+                swerveInputs.rl.turnFaulted ||
+                swerveInputs.rr.turnFaulted
+
 
     override val maxLinearSpeedMps: Double = MAX_SPEED.`in`(MetersPerSecond)
     override val maxAngularSpeedRadPerSec: Double = MAX_ANGULAR_SPEED.`in`(RadiansPerSecond)
@@ -155,6 +170,9 @@ class SwerveDriveSubsystem(
         }
 
         publishSwerveTelemetry()
+
+        leds.setFault(LedSubsystem.Fault.DRIVE_MOTOR_FAIL, anyDriveModuleFaulted)
+        leds.setFault(LedSubsystem.Fault.TURNING_MOTOR_FAIL, anyTurnModuleFaulted)
     }
 
     private fun formatAngle(angleDegrees: Double): Double {
