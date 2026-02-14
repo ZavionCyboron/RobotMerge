@@ -1,4 +1,4 @@
-package org.hangar84.robot2026.subsystems.drivebases
+package org.hangar84.robot2026.subsystems.drivebases.mecanum
 
 import com.pathplanner.lib.auto.AutoBuilder
 import com.pathplanner.lib.config.PIDConstants
@@ -9,26 +9,26 @@ import edu.wpi.first.math.estimator.MecanumDrivePoseEstimator
 import edu.wpi.first.math.geometry.Pose2d
 import edu.wpi.first.math.geometry.Rotation2d
 import edu.wpi.first.math.geometry.Translation2d
-import edu.wpi.first.math.kinematics.*
+import edu.wpi.first.math.kinematics.ChassisSpeeds
+import edu.wpi.first.math.kinematics.MecanumDriveKinematics
+import edu.wpi.first.math.kinematics.MecanumDriveOdometry
+import edu.wpi.first.math.kinematics.MecanumDriveWheelPositions
+import edu.wpi.first.math.kinematics.MecanumDriveWheelSpeeds
 import edu.wpi.first.networktables.NetworkTableInstance
-import edu.wpi.first.units.Units.Inches
-import edu.wpi.first.units.Units.Meters
+import edu.wpi.first.units.Units
 import edu.wpi.first.wpilibj.DriverStation
 import edu.wpi.first.wpilibj.RobotBase
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser
 import edu.wpi.first.wpilibj2.command.Command
 import edu.wpi.first.wpilibj2.command.Commands
-import org.hangar84.robot2026.RobotContainer.robotType
+import org.hangar84.robot2026.RobotContainer
 import org.hangar84.robot2026.io.interfaces.drivebaseio.GyroIO
 import org.hangar84.robot2026.io.interfaces.drivebaseio.MecanumIO
-import org.hangar84.robot2026.io.interfaces.ledio.LedTarget
+import org.hangar84.robot2026.subsystems.drivebases.Drivetrain
 import org.hangar84.robot2026.subsystems.leds.LedSubsystem
 import org.hangar84.robot2026.telemetry.TelemetryRouter
 import kotlin.jvm.optionals.getOrNull
 import kotlin.math.abs
-import org.hangar84.robot2026.io.interfaces.drivebaseio.GyroIO.Inputs as gyroInputs
-import org.hangar84.robot2026.io.interfaces.drivebaseio.MecanumIO.Inputs as mecanumInputs
-
 
 class MecanumDriveSubsystem(
     private val mecanumIO: MecanumIO,
@@ -42,18 +42,18 @@ class MecanumDriveSubsystem(
 
     override fun getChassisSpeeds(): ChassisSpeeds = chassisSpeedsFromInputs
 
-    private val TRACK_WIDTH = Inches.of(23.1875)
+    private val TRACK_WIDTH = Units.Inches.of(23.1875)
 
-    private val WHEEL_BASE = Inches.of(16.125)
+    private val WHEEL_BASE = Units.Inches.of(16.125)
 
-    private val WHEEL_BASE_M = WHEEL_BASE.`in`(Meters)
+    private val WHEEL_BASE_M = WHEEL_BASE.`in`(Units.Meters)
 
-    private val TRACK_WIDTH_M = TRACK_WIDTH.`in`(Meters)
+    private val TRACK_WIDTH_M = TRACK_WIDTH.`in`(Units.Meters)
 
     private val isSim = RobotBase.isSimulation()
 
-    private val gyroInputs = gyroInputs()
-    private val mecanumInputs = mecanumInputs()
+    private val gyroInputs = GyroIO.Inputs()
+    private val mecanumInputs = MecanumIO.Inputs()
 
     private val anyMotorFaulted =
                 mecanumInputs.flDriveFaulted ||
@@ -123,12 +123,12 @@ class MecanumDriveSubsystem(
             this).withTimeout(2.5)
 
     private fun publishMecanumTelemetry(wheelPositions: MecanumDriveWheelPositions) {
-        TelemetryRouter.bool(robotType.name, true)
+        TelemetryRouter.bool(RobotContainer.robotType.name, true)
 
         // --- Heading / Pose ---
         val pose = poseEstimator.estimatedPosition
 
-        TelemetryRouter.num("${robotType.name}/YawDeg", getHeading().degrees)
+        TelemetryRouter.num("${RobotContainer.robotType.name}/YawDeg", getHeading().degrees)
         TelemetryRouter.pose(pose)
 
         TelemetryRouter.wheelEncoders(wheelPositions.frontLeftMeters, wheelPositions.frontRightMeters,
@@ -178,7 +178,7 @@ class MecanumDriveSubsystem(
     }
 
     override fun periodic() {
-        TelemetryRouter.setBase(if (isSim) "${robotType.name}/Sim" else robotType.name)
+        TelemetryRouter.setBase(if (isSim) "${RobotContainer.robotType.name}/Sim" else RobotContainer.robotType.name)
 
         gyroIO.updateInputs(gyroInputs)
         mecanumIO.updateInputs(mecanumInputs)

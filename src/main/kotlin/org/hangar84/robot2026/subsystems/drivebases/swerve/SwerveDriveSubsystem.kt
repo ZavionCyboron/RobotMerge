@@ -1,4 +1,4 @@
-package org.hangar84.robot2026.subsystems.drivebases
+package org.hangar84.robot2026.subsystems.drivebases.swerve
 
 import com.pathplanner.lib.auto.AutoBuilder
 import com.pathplanner.lib.config.PIDConstants
@@ -6,32 +6,39 @@ import com.pathplanner.lib.config.RobotConfig
 import com.pathplanner.lib.controllers.PPHolonomicDriveController
 import edu.wpi.first.apriltag.AprilTagFieldLayout
 import edu.wpi.first.apriltag.AprilTagFields
-import edu.wpi.first.hal.FRCNetComm.tInstances
-import edu.wpi.first.hal.FRCNetComm.tResourceType
+import edu.wpi.first.hal.FRCNetComm
 import edu.wpi.first.hal.HAL
 import edu.wpi.first.math.VecBuilder
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator
-import edu.wpi.first.math.geometry.*
-import edu.wpi.first.math.kinematics.*
+import edu.wpi.first.math.geometry.Pose2d
+import edu.wpi.first.math.geometry.Rotation2d
+import edu.wpi.first.math.geometry.Rotation3d
+import edu.wpi.first.math.geometry.Transform3d
+import edu.wpi.first.math.geometry.Translation2d
+import edu.wpi.first.math.geometry.Translation3d
+import edu.wpi.first.math.kinematics.ChassisSpeeds
+import edu.wpi.first.math.kinematics.SwerveDriveKinematics
+import edu.wpi.first.math.kinematics.SwerveDriveOdometry
+import edu.wpi.first.math.kinematics.SwerveModulePosition
+import edu.wpi.first.math.kinematics.SwerveModuleState
 import edu.wpi.first.networktables.NetworkTableInstance
-import edu.wpi.first.units.Units.*
+import edu.wpi.first.units.Units
 import edu.wpi.first.wpilibj.DriverStation
 import edu.wpi.first.wpilibj.RobotBase
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard
 import edu.wpi.first.wpilibj2.command.Command
 import edu.wpi.first.wpilibj2.command.Commands
-import org.hangar84.robot2026.RobotContainer.robotType
+import org.hangar84.robot2026.RobotContainer
 import org.hangar84.robot2026.io.interfaces.drivebaseio.GyroIO
 import org.hangar84.robot2026.io.interfaces.drivebaseio.SwerveIO
+import org.hangar84.robot2026.subsystems.drivebases.Drivetrain
 import org.hangar84.robot2026.subsystems.leds.LedSubsystem
 import org.hangar84.robot2026.telemetry.TelemetryRouter
 import org.photonvision.EstimatedRobotPose
 import org.photonvision.PhotonCamera
 import org.photonvision.PhotonPoseEstimator
 import kotlin.jvm.optionals.getOrNull
-import org.hangar84.robot2026.io.interfaces.drivebaseio.GyroIO.Inputs as gyroInputs
-import org.hangar84.robot2026.io.interfaces.drivebaseio.SwerveIO.Inputs as swerveInputs
 
 class SwerveDriveSubsystem(
     private val swerveIO: SwerveIO,
@@ -40,13 +47,13 @@ class SwerveDriveSubsystem(
 ): Drivetrain() {
 
     companion object {
-        internal val MAX_SPEED = MetersPerSecond.of(4.8)
-        internal val MAX_ANGULAR_SPEED = RotationsPerSecond.of(1.0)
+        internal val MAX_SPEED = Units.MetersPerSecond.of(4.8)
+        internal val MAX_ANGULAR_SPEED = Units.RotationsPerSecond.of(1.0)
     }
 
     private val isSim = RobotBase.isSimulation()
-    private val gyroInputs = gyroInputs()
-    private val swerveInputs = swerveInputs()
+    private val gyroInputs = GyroIO.Inputs()
+    private val swerveInputs = SwerveIO.Inputs()
 
     private val anyDriveModuleFaulted =
         swerveInputs.fl.driveFaulted ||
@@ -61,11 +68,11 @@ class SwerveDriveSubsystem(
                 swerveInputs.rr.turnFaulted
 
 
-    override val maxLinearSpeedMps: Double = MAX_SPEED.`in`(MetersPerSecond)
-    override val maxAngularSpeedRadPerSec: Double = MAX_ANGULAR_SPEED.`in`(RadiansPerSecond)
+    override val maxLinearSpeedMps: Double = MAX_SPEED.`in`(Units.MetersPerSecond)
+    override val maxAngularSpeedRadPerSec: Double = MAX_ANGULAR_SPEED.`in`(Units.RadiansPerSecond)
 
-    private val WHEEL_BASE_M = Inches.of(21.375).`in`(Meters)
-    private val TRACK_WIDTH_M = Inches.of(19.50).`in`(Meters)
+    private val WHEEL_BASE_M = Units.Inches.of(21.375).`in`(Units.Meters)
+    private val TRACK_WIDTH_M = Units.Inches.of(19.50).`in`(Units.Meters)
 
     // -- Kinematics & Odometry --
     val kinematics = SwerveDriveKinematics(
@@ -90,7 +97,7 @@ class SwerveDriveSubsystem(
     private val camera = PhotonCamera("FrontCamera")
     private val fieldLayout = AprilTagFieldLayout.loadField(AprilTagFields.k2026RebuiltAndymark)
     private val cameraOffset = Transform3d(
-        Translation3d(Inches.of(-8.0), Inches.of(9.0), Inches.of(12.0)),
+        Translation3d(Units.Inches.of(-8.0), Units.Inches.of(9.0), Units.Inches.of(12.0)),
         Rotation3d(0.0, 0.0, 0.0)
     )
     private val photonEstimator = PhotonPoseEstimator(fieldLayout, cameraOffset)
@@ -119,7 +126,7 @@ class SwerveDriveSubsystem(
     ).withTimeout(2.5)
 
     init {
-        HAL.report(tResourceType.kResourceType_RobotDrive, tInstances.kRobotDriveSwerve_MaxSwerve)
+        HAL.report(FRCNetComm.tResourceType.kResourceType_RobotDrive, FRCNetComm.tInstances.kRobotDriveSwerve_MaxSwerve)
     }
 
     override fun getHeading(): Rotation2d = gyroInputs.yaw
@@ -152,7 +159,7 @@ class SwerveDriveSubsystem(
     )
 
     override fun periodic() {
-        TelemetryRouter.setBase(if (isSim) "${robotType.name}/Sim" else robotType.name)
+        TelemetryRouter.setBase(if (isSim) "${RobotContainer.robotType.name}/Sim" else RobotContainer.robotType.name)
 
         gyroIO.updateInputs(gyroInputs)
         swerveIO.updateInputs(swerveInputs)
@@ -186,7 +193,7 @@ class SwerveDriveSubsystem(
         val chassis = getChassisSpeeds()
         val currentStates = moduleStatesFromInputs()
 
-        TelemetryRouter.bool(robotType.name, true)
+        TelemetryRouter.bool(RobotContainer.robotType.name, true)
         TelemetryRouter.pose(pose)
 
         val table = NetworkTableInstance.getDefault().getTable("SwerveDrive")
