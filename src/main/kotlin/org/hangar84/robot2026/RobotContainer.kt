@@ -93,7 +93,7 @@ object RobotContainer {
         )
 
     val ledIO: LedIO =
-        LedIOLumynUsb(USBPort.kUSB1, "all")
+        LedIOLumynUsb(USBPort.kUSB1, "base")
 
     val leds = LedSubsystem(ledIO).apply { connect() }
 
