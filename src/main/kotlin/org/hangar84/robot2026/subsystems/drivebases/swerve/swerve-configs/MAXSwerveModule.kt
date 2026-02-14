@@ -1,4 +1,4 @@
-package org.hangar84.robot2026.swerve
+package org.hangar84.robot2026.subsystems.drivebases.swerve.`swerve-configs`
 
 import com.revrobotics.PersistMode
 import com.revrobotics.ResetMode
