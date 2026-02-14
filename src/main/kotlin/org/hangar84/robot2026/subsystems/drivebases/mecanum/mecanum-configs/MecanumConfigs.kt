@@ -1,4 +1,4 @@
-package org.hangar84.robot2026.mecanum
+package org.hangar84.robot2026.subsystems.drivebases.mecanum.`mecanum-configs`
 
 import com.revrobotics.spark.FeedbackSensor
 import com.revrobotics.spark.config.SparkBaseConfig
