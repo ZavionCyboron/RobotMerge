@@ -1,11 +1,11 @@
-package org.hangar84.robot2026.io.real
+package org.hangar84.robot2026.io.real.mechanismrealio
 
 import com.revrobotics.PersistMode
 import com.revrobotics.ResetMode
 import com.revrobotics.spark.SparkLowLevel.MotorType
 import com.revrobotics.spark.SparkMax
 import com.revrobotics.spark.config.SparkMaxConfig
-import org.hangar84.robot2026.io.LauncherIO
+import org.hangar84.robot2026.io.interfaces.mechanismio.LauncherIO
 import org.hangar84.robot2026.constants.Launcher
 import org.hangar84.robot2026.constants.MaxConfig
 

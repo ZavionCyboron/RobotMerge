@@ -1,4 +1,4 @@
-package org.hangar84.robot2026.io.real
+package org.hangar84.robot2026.io.real.mechanismrealio
 
 import com.revrobotics.PersistMode
 import com.revrobotics.ResetMode
@@ -7,7 +7,7 @@ import com.revrobotics.spark.SparkMax
 import com.revrobotics.spark.config.SparkMaxConfig
 import org.hangar84.robot2026.constants.Intake
 import org.hangar84.robot2026.constants.MaxConfig
-import org.hangar84.robot2026.io.IntakeIO
+import org.hangar84.robot2026.io.interfaces.mechanismio.IntakeIO
 
 class RevIntakeIO(cfg: Intake, maxcfg: MaxConfig) : IntakeIO {
     private val currentLimit = maxcfg.currentLimit

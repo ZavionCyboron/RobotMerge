@@ -1,4 +1,4 @@
-package org.hangar84.robot2026.io.real
+package org.hangar84.robot2026.io.real.mechanismrealio
 
 import com.revrobotics.PersistMode
 import com.revrobotics.ResetMode
@@ -7,7 +7,7 @@ import com.revrobotics.spark.SparkMax
 import com.revrobotics.spark.config.SparkMaxConfig
 import org.hangar84.robot2026.constants.Hinge
 import org.hangar84.robot2026.constants.MaxConfig
-import org.hangar84.robot2026.io.HingeIO
+import org.hangar84.robot2026.io.interfaces.mechanismio.HingeIO
 
 class RevHingeIO(cfg: Hinge, maxcfg: MaxConfig): HingeIO {
 

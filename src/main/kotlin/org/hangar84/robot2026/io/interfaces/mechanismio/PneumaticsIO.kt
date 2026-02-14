@@ -1,4 +1,4 @@
-package org.hangar84.robot2026.io
+package org.hangar84.robot2026.io.interfaces.mechanismio
 
 interface PneumaticsIO {
     enum class State { EXTEND, //Forward

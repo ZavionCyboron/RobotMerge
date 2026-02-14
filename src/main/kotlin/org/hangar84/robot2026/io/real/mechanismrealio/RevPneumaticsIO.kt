@@ -1,10 +1,10 @@
-package org.hangar84.robot2026.io.real
+package org.hangar84.robot2026.io.real.mechanismrealio
 import edu.wpi.first.wpilibj.PneumaticHub
 import edu.wpi.first.wpilibj.DoubleSolenoid
-import org.hangar84.robot2026.io.PneumaticsIO
+import org.hangar84.robot2026.io.interfaces.mechanismio.PneumaticsIO
 import org.hangar84.robot2026.constants.Pneumatics
 
-class CtreTwoValvePneumaticsIO(cfg: Pneumatics) : PneumaticsIO {
+class RevPneumaticsIO(cfg: Pneumatics) : PneumaticsIO {
 
     private val hub = PneumaticHub(cfg.revPHId)
 
