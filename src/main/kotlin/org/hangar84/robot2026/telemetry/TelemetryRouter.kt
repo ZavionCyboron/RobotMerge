@@ -2,13 +2,12 @@ package org.hangar84.robot2026.telemetry
 
 import edu.wpi.first.math.geometry.Pose2d
 import edu.wpi.first.math.geometry.Rotation2d
-import edu.wpi.first.math.kinematics.SwerveModuleState
 import edu.wpi.first.networktables.GenericEntry
 import edu.wpi.first.networktables.NetworkTable
 import edu.wpi.first.networktables.NetworkTableInstance
 import edu.wpi.first.wpilibj.RobotBase
 import edu.wpi.first.wpilibj.Timer
-import org.hangar84.robot2026.io.SwerveIO
+import org.hangar84.robot2026.io.interfaces.drivebaseio.SwerveIO
 
 object TelemetryRouter {
     private val isSim = RobotBase.isSimulation()
