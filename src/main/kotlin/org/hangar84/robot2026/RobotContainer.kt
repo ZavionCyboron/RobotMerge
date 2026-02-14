@@ -15,13 +15,26 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController
 import org.hangar84.robot2026.commands.driveCommand
 import org.hangar84.robot2026.constants.ConfigLoader
 import org.hangar84.robot2026.constants.RobotType
-import org.hangar84.robot2026.io.GyroIO
-import org.hangar84.robot2026.io.LedIO
-import org.hangar84.robot2026.io.MecanumIO
-import org.hangar84.robot2026.io.PneumaticsIO
-import org.hangar84.robot2026.io.SwerveIO
-import org.hangar84.robot2026.io.real.*
-import org.hangar84.robot2026.io.sim.*
+import org.hangar84.robot2026.io.interfaces.drivebaseio.GyroIO
+import org.hangar84.robot2026.io.interfaces.ledio.LedIO
+import org.hangar84.robot2026.io.interfaces.drivebaseio.MecanumIO
+import org.hangar84.robot2026.io.interfaces.mechanismio.PneumaticsIO
+import org.hangar84.robot2026.io.interfaces.drivebaseio.SwerveIO
+import org.hangar84.robot2026.io.real.drivebaserealio.AdisGyroIO
+import org.hangar84.robot2026.io.real.drivebaserealio.MaxSwerveIO
+import org.hangar84.robot2026.io.real.drivebaserealio.RevMecanumIO
+import org.hangar84.robot2026.io.real.ledrealio.LedIOLumynUsb
+import org.hangar84.robot2026.io.real.mechanismrealio.RevHingeIO
+import org.hangar84.robot2026.io.real.mechanismrealio.RevIntakeIO
+import org.hangar84.robot2026.io.real.mechanismrealio.RevLauncherIO
+import org.hangar84.robot2026.io.real.mechanismrealio.RevPneumaticsIO
+import org.hangar84.robot2026.io.sim.simdrivebaseio.SimGyroIO
+import org.hangar84.robot2026.io.sim.simdrivebaseio.SimMecanumIO
+import org.hangar84.robot2026.io.sim.simdrivebaseio.SimSwerveIO
+import org.hangar84.robot2026.io.sim.simmechanismio.SimHingeIO
+import org.hangar84.robot2026.io.sim.simmechanismio.SimIntakeIO
+import org.hangar84.robot2026.io.sim.simmechanismio.SimLauncherIO
+import org.hangar84.robot2026.io.sim.simmechanismio.SimPneumaticsIO
 import org.hangar84.robot2026.sim.SimClock.dtSeconds
 import org.hangar84.robot2026.sim.SimField
 import org.hangar84.robot2026.sim.SimField.publishOnce
@@ -30,7 +43,9 @@ import org.hangar84.robot2026.sim.SimHooks
 import org.hangar84.robot2026.sim.SimSensors
 import org.hangar84.robot2026.sim.SimState
 import org.hangar84.robot2026.sim.SimState.isSim
-import org.hangar84.robot2026.subsystems.*
+import org.hangar84.robot2026.subsystems.drivebases.*
+import org.hangar84.robot2026.subsystems.leds.LedSubsystem
+import org.hangar84.robot2026.subsystems.mechanisms.*
 import org.hangar84.robot2026.telemetry.TelemetryRouter
 import kotlin.math.hypot
 import kotlin.math.withSign
@@ -71,14 +86,14 @@ object RobotContainer {
 
     val pneumaticsIO: PneumaticsIO =
         if (isSim) SimPneumaticsIO()
-        else CtreTwoValvePneumaticsIO(
+        else RevPneumaticsIO(
             sharedCfg.pneumatics
         )
 
     val ledIO: LedIO =
         LedIOLumynUsb(USBPort.kUSB1, "all")
 
-    val leds = LedSubsystem(ledIO).apply { connect() }
+    val leds = LedSubsystem(ledIO, robotType).apply { connect() }
 
     val pneumatics = PneumaticsSubsystem(pneumaticsIO)
 
@@ -116,13 +131,13 @@ object RobotContainer {
                 setYawAdjustmentDegrees(90.0)
             }
             val swerve: SwerveIO = if (isSim) SimSwerveIO() else MaxSwerveIO(robotCfg.swerve, sharedCfg.max_config)
-            SwerveDriveSubsystem(swerve, gyro)
+            SwerveDriveSubsystem(swerve, gyro, leds)
         }
 
         RobotType.MECANUM -> {
             val gyro: GyroIO = if (isSim) SimGyroIO() else AdisGyroIO()
             val mecanum: MecanumIO = if (isSim) SimMecanumIO() else RevMecanumIO(robotCfg.mecanum, sharedCfg.max_config)
-            MecanumDriveSubsystem(mecanum, gyro)
+            MecanumDriveSubsystem(mecanum, gyro, leds)
         }
     }
 
