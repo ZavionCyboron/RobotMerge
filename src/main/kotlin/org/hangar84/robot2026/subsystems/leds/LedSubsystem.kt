@@ -47,15 +47,15 @@ class LedSubsystem(private val io: LedIO): SubsystemBase() {
     private fun applyPriority() {
         when {
             faults.contains(Fault.RIO_BROWNOUT) -> {
-                io.setStrobe(LedTarget.BASE, Color(1.0, 0.0, 0.0), 70) // red fast strobe
+                io.setStrobe(LedTarget.MAIN, Color(1.0, 0.0, 0.0), 70) // red fast strobe
                 return
             }
             faults.contains(Fault.DS_DISCONNECTED) -> {
-                io.setChase(LedTarget.BASE, Color(0.6156862745, 0.0, 1.0), 70) // purple chase
+                io.setChase(LedTarget.MAIN, Color(0.6156862745, 0.0, 1.0), 70) // purple chase
                 return
             }
             faults.contains(Fault.LOW_BATTERY) -> {
-                io.setBreathe(LedTarget.BASE, Color(1.0, 0.6470588235, 0.0), 90) //orange breathe
+                io.setBreathe(LedTarget.MAIN, Color(1.0, 0.6470588235, 0.0), 90) //orange breathe
             }
         }
 
