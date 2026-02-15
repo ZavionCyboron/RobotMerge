@@ -10,6 +10,7 @@ import org.hangar84.robot2026.io.interfaces.ledio.LedTarget
 
 class LedIOLumynUsb(
     private val usbPort: USBPort = USBPort.kUSB1,
+    private val groupMain: String = "main",
     private val groupBase: String = "base",
     private val groupIntake: String = "intake",
     private val groupLauncher: String = "launcher",
@@ -21,6 +22,7 @@ class LedIOLumynUsb(
     private var lasCmdSig: String? = null
 
     private fun groupId(t: LedTarget) = when (t) {
+        LedTarget.MAIN -> groupMain
         LedTarget.BASE -> groupBase
         LedTarget.INTAKE ->  groupIntake
         LedTarget.LAUNCHER -> groupLauncher
