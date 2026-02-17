@@ -67,8 +67,8 @@ class LauncherSubsystem(val io: LauncherIO) : SubsystemBase() {
             inputs.leftTempCelsius,
             inputs.rightTempCelsius,
             launch_State,
-            TelemetryRouter.Launcher.launcherSwitch(launch_Switch)
-
+            TelemetryRouter.Launcher.launcherSwitch(launch_Switch),
+            TelemetryRouter.Launcher.getLauncherSpeed()
         )
     }
 }
