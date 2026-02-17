@@ -16,11 +16,10 @@ import org.hangar84.robot2026.commands.driveCommand
 import org.hangar84.robot2026.constants.ConfigLoader
 import org.hangar84.robot2026.constants.RobotType
 import org.hangar84.robot2026.io.interfaces.drivebaseio.GyroIO
-import org.hangar84.robot2026.io.interfaces.ledio.LedIO
 import org.hangar84.robot2026.io.interfaces.drivebaseio.MecanumIO
-import org.hangar84.robot2026.io.interfaces.mechanismio.PneumaticsIO
 import org.hangar84.robot2026.io.interfaces.drivebaseio.SwerveIO
 import org.hangar84.robot2026.io.interfaces.ledio.LedIOMulti
+import org.hangar84.robot2026.io.interfaces.mechanismio.PneumaticsIO
 import org.hangar84.robot2026.io.real.drivebaserealio.AdisGyroIO
 import org.hangar84.robot2026.io.real.drivebaserealio.MaxSwerveIO
 import org.hangar84.robot2026.io.real.drivebaserealio.RevMecanumIO
@@ -45,11 +44,14 @@ import org.hangar84.robot2026.sim.SimHooks
 import org.hangar84.robot2026.sim.SimSensors
 import org.hangar84.robot2026.sim.SimState
 import org.hangar84.robot2026.sim.SimState.isSim
-import org.hangar84.robot2026.subsystems.drivebases.*
+import org.hangar84.robot2026.subsystems.drivebases.Drivetrain
 import org.hangar84.robot2026.subsystems.drivebases.mecanum.MecanumDriveSubsystem
 import org.hangar84.robot2026.subsystems.drivebases.swerve.SwerveDriveSubsystem
 import org.hangar84.robot2026.subsystems.leds.LedSubsystem
-import org.hangar84.robot2026.subsystems.mechanisms.*
+import org.hangar84.robot2026.subsystems.mechanisms.HingeSubsystem
+import org.hangar84.robot2026.subsystems.mechanisms.IntakeSubsystem
+import org.hangar84.robot2026.subsystems.mechanisms.LauncherSubsystem
+import org.hangar84.robot2026.subsystems.mechanisms.PneumaticsSubsystem
 import org.hangar84.robot2026.telemetry.TelemetryRouter
 import kotlin.math.hypot
 import kotlin.math.withSign
@@ -96,7 +98,13 @@ object RobotContainer {
 
     val leds = LedSubsystem(
         LedIOMulti(
-            LedIOLumynUsb(USBPort.kUSB1, "base"), // Your ConnectorX
+            LedIOLumynUsb(
+                USBPort.kUSB1,
+                "base",
+                "intake",
+                "launcher",
+                "all"
+            ), // Your ConnectorX
             LedIOPwmZia(0)                        // Your Zia symbol on PWM 0
         )
     )

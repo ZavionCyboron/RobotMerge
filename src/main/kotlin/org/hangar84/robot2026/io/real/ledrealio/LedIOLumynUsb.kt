@@ -10,12 +10,10 @@ import org.hangar84.robot2026.io.interfaces.ledio.LedTarget
 
 class LedIOLumynUsb(
     private val usbPort: USBPort = USBPort.kUSB1,
-    private val groupMain: String = "main",
     private val groupBase: String = "base",
     private val groupIntake: String = "intake",
     private val groupLauncher: String = "launcher",
-    private val groupALL: String = "ALL",
-    private val groupNull: String = ""
+    private val groupALL: String = "all",
 ) : LedIO {
 
     private val cx = ConnectorXAnimate()
@@ -23,12 +21,10 @@ class LedIOLumynUsb(
     private var lasCmdSig: String? = null
 
     private fun groupId(t: LedTarget) = when (t) {
-        LedTarget.MAIN -> groupMain
         LedTarget.BASE -> groupBase
         LedTarget.INTAKE ->  groupIntake
         LedTarget.LAUNCHER -> groupLauncher
         LedTarget.ALL -> groupALL
-        LedTarget.NULL -> groupNull
     }
 
     override fun connect() {
@@ -50,7 +46,7 @@ class LedIOLumynUsb(
         cx.leds.SetGroupColor(groupId(target), color)
     }
 
-    override fun setOff() = setSolid(LedTarget.NULL, Color(0.0, 0.0, 0.0))
+    override fun setOff() = setSolid(LedTarget.BASE, Color(0.0, 0.0, 0.0))
 
     override fun setBreathe(target: LedTarget, color: Color, periodMs: Int) {
         sendOnce("breathe:${color.red}:${color.green}:${color.blue}:$periodMs") {
