@@ -6,6 +6,7 @@ import edu.wpi.first.wpilibj.Timer
 import edu.wpi.first.wpilibj.util.Color
 import org.hangar84.robot2026.io.interfaces.ledio.LedIO
 import org.hangar84.robot2026.io.interfaces.ledio.LedTarget
+import kotlin.math.sin
 
 class LedIOPwmZia(pwmPort: Int = 0) : LedIO {
     private val led = AddressableLED(pwmPort)
@@ -40,7 +41,7 @@ class LedIOPwmZia(pwmPort: Int = 0) : LedIO {
 
     override fun setBreathe(target: LedTarget, color: Color, periodMs: Int) {
         if (target == LedTarget.ALL) {
-            val luma = (Math.sin(Timer.getFPGATimestamp() * 1000 * 2 * Math.PI / periodMs) + 1.0) / 2.0
+            val luma = (sin(Timer.getFPGATimestamp() * 1000 * 2 * Math.PI / periodMs) + 1.0) / 2.0
             updateAll(Color(color.red * luma, color.green * luma, color.blue * luma))
         } else {
             updateAll(Color.kBlack)
