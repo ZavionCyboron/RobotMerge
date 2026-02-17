@@ -10,7 +10,7 @@ import org.hangar84.robot2026.subsystems.drivebases.swerve.`swerve-configs`.MAXS
 import org.hangar84.robot2026.subsystems.drivebases.swerve.`swerve-configs`.SwerveConfigs.drivingConfig
 import org.hangar84.robot2026.subsystems.drivebases.swerve.`swerve-configs`.SwerveConfigs.turningConfig
 
-class MaxSwerveIO(cfg: Swerve?, maxcfg: MaxConfig) : SwerveIO {
+class MaxSwerveIO(cfg: Swerve, maxcfg: MaxConfig) : SwerveIO {
 
     private val currentLimit = maxcfg.currentLimit + 10
     private val invertedTrue = maxcfg.inverted
@@ -22,7 +22,7 @@ class MaxSwerveIO(cfg: Swerve?, maxcfg: MaxConfig) : SwerveIO {
     }
 
     private val fl: MAXSwerveModule = MAXSwerveModule(
-        cfg!!.frontLeftDrivingId,
+        cfg.frontLeftDrivingId,
         cfg.frontLeftTurningId,
         Degrees.of(270.0),
         drivingConfig,
@@ -30,7 +30,7 @@ class MaxSwerveIO(cfg: Swerve?, maxcfg: MaxConfig) : SwerveIO {
     )
 
     private val fr: MAXSwerveModule = MAXSwerveModule(
-        cfg!!.frontRightDrivingId,
+        cfg.frontRightDrivingId,
         cfg.frontRightTurningId,
         Degrees.of(0.0),
         drivingConfig,
@@ -38,7 +38,7 @@ class MaxSwerveIO(cfg: Swerve?, maxcfg: MaxConfig) : SwerveIO {
     )
 
     private val rl: MAXSwerveModule = MAXSwerveModule(
-        cfg!!.rearLeftDrivingId,
+        cfg.rearLeftDrivingId,
         cfg.rearLeftTurningId,
         Degrees.of(180.0),
         drivingConfig,
@@ -46,7 +46,7 @@ class MaxSwerveIO(cfg: Swerve?, maxcfg: MaxConfig) : SwerveIO {
     )
 
     private val rr: MAXSwerveModule = MAXSwerveModule(
-        cfg!!.rearRightDrivingId,
+        cfg.rearRightDrivingId,
         cfg.rearRightTurningId,
         Degrees.of(90.0),
         rrDrivingConfig,

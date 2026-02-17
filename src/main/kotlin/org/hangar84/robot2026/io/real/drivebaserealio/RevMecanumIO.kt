@@ -7,7 +7,7 @@ import org.hangar84.robot2026.subsystems.drivebases.mecanum.`mecanum-configs`.Me
 import org.hangar84.robot2026.subsystems.drivebases.mecanum.`mecanum-configs`.MecanumModule
 import org.hangar84.robot2026.constants.Mecanum
 
-class RevMecanumIO(cfg: Mecanum?, maxcfg: MaxConfig) : MecanumIO {
+class RevMecanumIO(cfg: Mecanum, maxcfg: MaxConfig) : MecanumIO {
     private val invertedTrue = maxcfg.inverted
 
     private val rrConfig: SparkMaxConfig = SparkMaxConfig().apply() {
@@ -15,10 +15,10 @@ class RevMecanumIO(cfg: Mecanum?, maxcfg: MaxConfig) : MecanumIO {
         inverted(invertedTrue)
     }
 
-    private val fl = MecanumModule("FL", cfg!!.frontLeftId, driveConfig)
-    private val fr = MecanumModule("FR", cfg!!.frontRightId, driveConfig)
-    private val rl = MecanumModule("RL", cfg!!.rearLeftId, driveConfig)
-    private val rr = MecanumModule("RR", cfg!!.rearRightId, rrConfig)
+    private val fl = MecanumModule("FL", cfg.frontLeftId, driveConfig)
+    private val fr = MecanumModule("FR", cfg.frontRightId, driveConfig)
+    private val rl = MecanumModule("RL", cfg.rearLeftId, driveConfig)
+    private val rr = MecanumModule("RR", cfg.rearRightId, rrConfig)
 
     override fun updateInputs(inputs: MecanumIO.Inputs) {
         val flDrive = fl.motor
