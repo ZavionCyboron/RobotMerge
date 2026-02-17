@@ -20,10 +20,12 @@ import org.hangar84.robot2026.io.interfaces.ledio.LedIO
 import org.hangar84.robot2026.io.interfaces.drivebaseio.MecanumIO
 import org.hangar84.robot2026.io.interfaces.mechanismio.PneumaticsIO
 import org.hangar84.robot2026.io.interfaces.drivebaseio.SwerveIO
+import org.hangar84.robot2026.io.interfaces.ledio.LedIOMulti
 import org.hangar84.robot2026.io.real.drivebaserealio.AdisGyroIO
 import org.hangar84.robot2026.io.real.drivebaserealio.MaxSwerveIO
 import org.hangar84.robot2026.io.real.drivebaserealio.RevMecanumIO
 import org.hangar84.robot2026.io.real.ledrealio.LedIOLumynUsb
+import org.hangar84.robot2026.io.real.ledrealio.LedIOPwmZia
 import org.hangar84.robot2026.io.real.mechanismrealio.RevHingeIO
 import org.hangar84.robot2026.io.real.mechanismrealio.RevIntakeIO
 import org.hangar84.robot2026.io.real.mechanismrealio.RevLauncherIO
@@ -92,10 +94,12 @@ object RobotContainer {
             sharedCfg.pneumatics
         )
 
-    val ledIO: LedIO =
-        LedIOLumynUsb(USBPort.kUSB1, "base")
-
-    val leds = LedSubsystem(ledIO).apply { connect() }
+    val leds = LedSubsystem(
+        LedIOMulti(
+            LedIOLumynUsb(USBPort.kUSB1, "base"), // Your ConnectorX
+            LedIOPwmZia(0)                        // Your Zia symbol on PWM 0
+        )
+    )
 
     val pneumatics = PneumaticsSubsystem(pneumaticsIO)
 
