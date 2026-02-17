@@ -160,21 +160,21 @@ class MecanumDriveSubsystem(
 
         // Wheel Speeds
         val dataTable = table.getSubTable("ModuleData")
-        dataTable.getEntry("FL_Speed").setDouble(mecanumInputs.flVelMps)
-        dataTable.getEntry("FR_Speed").setDouble(mecanumInputs.frVelMps)
-        dataTable.getEntry("RL_Speed").setDouble(mecanumInputs.rlVelMps)
-        dataTable.getEntry("RR_Speed").setDouble(mecanumInputs.rrVelMps)
+        dataTable.getEntry("FL Speed").setDouble(mecanumInputs.flVelMps)
+        dataTable.getEntry("FR Speed").setDouble(mecanumInputs.frVelMps)
+        dataTable.getEntry("RL Speed").setDouble(mecanumInputs.rlVelMps)
+        dataTable.getEntry("RR Speed").setDouble(mecanumInputs.rrVelMps)
 
         // Power and Voltage
-        val powerTable = table.getSubTable("Power")
-        powerTable.getEntry("FL_Amps").setDouble(mecanumInputs.flCurrentAmps)
-        powerTable.getEntry("FL_Volts").setDouble(mecanumInputs.flAppliedVolts)
-        powerTable.getEntry("FR_Amps").setDouble(mecanumInputs.frCurrentAmps)
-        powerTable.getEntry("FR_Volts").setDouble(mecanumInputs.frAppliedVolts)
-        powerTable.getEntry("RL_Amps").setDouble(mecanumInputs.rlCurrentAmps)
-        powerTable.getEntry("RL_Volts").setDouble(mecanumInputs.rlAppliedVolts)
-        powerTable.getEntry("RR_Amps").setDouble(mecanumInputs.rrCurrentAmps)
-        powerTable.getEntry("RR_Volts").setDouble(mecanumInputs.rrAppliedVolts)
+        val powerTable = table.getSubTable("Power/Drive")
+        powerTable.getEntry("FL Amps").setDouble(mecanumInputs.flCurrentAmps)
+        powerTable.getEntry("FL Volts").setDouble(mecanumInputs.flAppliedVolts)
+        powerTable.getEntry("FR Amps").setDouble(mecanumInputs.frCurrentAmps)
+        powerTable.getEntry("FR Volts").setDouble(mecanumInputs.frAppliedVolts)
+        powerTable.getEntry("RL Amps").setDouble(mecanumInputs.rlCurrentAmps)
+        powerTable.getEntry("RL Volts").setDouble(mecanumInputs.rlAppliedVolts)
+        powerTable.getEntry("RR Amps").setDouble(mecanumInputs.rrCurrentAmps)
+        powerTable.getEntry("RR Volts").setDouble(mecanumInputs.rrAppliedVolts)
     }
 
     override fun periodic() {
