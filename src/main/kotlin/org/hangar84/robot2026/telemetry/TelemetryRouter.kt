@@ -26,17 +26,25 @@ object TelemetryRouter {
 
     private val swerveTable = NetworkTableInstance.getDefault().getTable("SwerveDrive")
 
-    private val powerTable = swerveTable.getSubTable("Power")
+    private val DrivepowerTable = swerveTable.getSubTable("Power/Drive")
+    private val TurnpowerTable = swerveTable.getSubTable("Power/Turning")
 
     object SwerveDrive {
         fun power(
             currentsName: String,
             voltsName: String,
-            i: Int,
+            inputs: SwerveIO.Inputs,
+            i: Int
         ){
-            val inputs = arrayOf(SwerveIO.Inputs().fl, SwerveIO.Inputs().fr, SwerveIO.Inputs().rl, SwerveIO.Inputs().rr)
-            powerTable.getEntry(currentsName).setDouble(inputs[i].driveCurrentAmps)
-            powerTable.getEntry(voltsName).setDouble(inputs[i].driveAppliedVolts)
+            val modules = arrayOf(inputs.fl, inputs.fr, inputs.rl, inputs.rr)
+            DrivepowerTable.getEntry(currentsName)
+                .setDouble(modules[i].driveCurrentAmps)
+            DrivepowerTable.getEntry(voltsName)
+                .setDouble(modules[i].driveAppliedVolts)
+            TurnpowerTable.getEntry(currentsName)
+                .setDouble(modules[i].turnCurrentAmps)
+            TurnpowerTable.getEntry(voltsName)
+                .setDouble(modules[i].turnAppliedVolts)
         }
         fun data(
             angleName: String,
@@ -211,7 +219,8 @@ object TelemetryRouter {
             leftTempCelsius: Double,
             rightTempCelsius: Double,
             launcherState: Boolean,
-            launcherSwitch: Boolean
+            launcherSwitch: Boolean,
+            launcherSpeed: Double
         ) {
             if (!shouldPublish("launcher")) return
 
@@ -227,9 +236,12 @@ object TelemetryRouter {
 
             table.getEntry("Launcher State").setBoolean(launcherState)
             table.getEntry("Launcher Switch").setBoolean(launcherSwitch)
+            table.getEntry("Launcher Speed").setDouble(launcherSpeed)
         }
         fun launcherSwitch(default: Boolean = false): Boolean =
             launcherTable.getEntry("Launcher Switch").getBoolean(default)
+        fun getLauncherSpeed(default: Double = 1.0): Double =
+            launcherTable.getEntry("Launcher Speed").getDouble(default)
     }
 
     object Intake{
@@ -239,6 +251,7 @@ object TelemetryRouter {
             leftAppliedOutput: Double,
             leftCurrentAmps: Double,
             leftTempCelsius: Double,
+            intakeSpeed: Double,
         ) {
             if (!shouldPublish("Intake")) return
 
@@ -248,7 +261,10 @@ object TelemetryRouter {
             table.getEntry("LeftAppliedVoltage").setDouble(leftAppliedOutput * 12.0)
             table.getEntry("LeftCurrentAmps").setDouble(leftCurrentAmps)
             table.getEntry("LeftTempCelsius").setDouble(leftTempCelsius)
+            table.getEntry("Intake Speed").setDouble(intakeSpeed)
         }
+        fun getIntakeSpeed(default: Double = 1.0): Double =
+            intakeTable.getEntry("Intake Speed").getDouble(default)
     }
 
     object Pneumatics{

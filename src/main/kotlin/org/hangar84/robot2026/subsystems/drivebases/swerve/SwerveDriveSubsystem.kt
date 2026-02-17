@@ -222,6 +222,7 @@ class SwerveDriveSubsystem(
             TelemetryRouter.SwerveDrive.power(
                 "${names[i]} Drive Amps",
                 "${names[i]} Volts",
+                swerveInputs,
                 i
             )
         }
