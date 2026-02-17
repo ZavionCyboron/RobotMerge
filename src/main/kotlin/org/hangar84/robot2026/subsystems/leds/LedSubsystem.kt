@@ -28,7 +28,9 @@ class LedSubsystem(private val io: LedIO): SubsystemBase() {
     private var mode: Mode = Mode.DEFAULT
     private val faults: EnumSet<Fault> = EnumSet.noneOf(Fault::class.java)
 
-    fun connect() = io.connect()
+    init {
+        io.connect()
+    }
 
     fun setMode(newMode: Mode) {mode = newMode}
 
@@ -45,46 +47,45 @@ class LedSubsystem(private val io: LedIO): SubsystemBase() {
     }
 
     private fun applyPriority() {
+        // --- PRIORITY 1: MAIN ERRORS (Zia + Strips) ---
         when {
             faults.contains(Fault.RIO_BROWNOUT) -> {
-                io.setStrobe(LedTarget.BASE, Color(1.0, 0.0, 0.0), 70) // red fast strobe
+                io.setStrobe(LedTarget.ALL, Color.kRed, 70)
                 return
             }
             faults.contains(Fault.DS_DISCONNECTED) -> {
-                io.setChase(LedTarget.BASE, Color(0.6156862745, 0.0, 1.0), 70) // purple chase
+                io.setChase(LedTarget.ALL, Color.kPurple, 70)
                 return
             }
             faults.contains(Fault.LOW_BATTERY) -> {
-                io.setBreathe(LedTarget.BASE, Color(1.0, 0.6470588235, 0.0), 90) //orange breathe
+                io.setBreathe(LedTarget.ALL, Color.kOrange, 90)
+                return
             }
         }
 
-        when (firstSubsystemFault()) {
-            Fault.DRIVE_MOTOR_FAIL -> {io.setStrobe(LedTarget.BASE, Color(1.0, 1.0, 0.0), 120); return} // yellow strobe
-            Fault.TURNING_MOTOR_FAIL -> {io.setStrobe(LedTarget.BASE, Color(1.0, 0.7529411765, 0.7960784314), 120); return} // pink strobe
-            Fault.INTAKE_MOTOR_FAIL -> {io.setStrobe(LedTarget.BASE, Color(0.4980392157, 1.0, 0.831372549), 120); return} // aquamarine strobe
-            Fault.LAUNCHER_MOTOR_FAIL -> {io.setStrobe(LedTarget.BASE, Color(0.0, 1.0, 1.0), 120); return} // cyan strobe
-            Fault.HINGE_MOTOR_FAIL -> {io.setStrobe(LedTarget.BASE, Color(0.5450980392, 0.0, 0.5450980392), 120); return} // dark magenta strobe
-            null -> {}
-            else -> {}
+        // --- PRIORITY 2: SUBSYSTEM ERRORS (Strips Only) ---
+        when {
+            faults.contains(Fault.DRIVE_MOTOR_FAIL) -> {
+                io.setStrobe(LedTarget.BASE, Color.kYellow, 120)
+                return
+            }
+            faults.contains(Fault.INTAKE_MOTOR_FAIL) -> {
+                io.setStrobe(LedTarget.INTAKE, Color.kAquamarine, 120)
+                return
+            }
+            faults.contains(Fault.LAUNCHER_MOTOR_FAIL) -> {
+                io.setStrobe(LedTarget.LAUNCHER, Color.kCyan, 120)
+                return
+            }
         }
 
+        // --- PRIORITY 3: NORMAL MODES ---
         when (mode) {
-            Mode.LAUNCH -> io.setStrobe(LedTarget.LAUNCHER, Color(1.0, 1.0, 1.0), 55) // white
-            Mode.INTAKE -> io.setStrobe(LedTarget.INTAKE, Color(0.0, 1.0, 0.0), 35) // green
-            Mode.DISABLED -> io.setBreathe(LedTarget.BASE, teamDim(), 90)
-            Mode.DEFAULT -> io.setSolid(LedTarget.BASE, teamDim())
+            Mode.LAUNCH -> io.setStrobe(LedTarget.LAUNCHER, Color.kWhite, 55)
+            Mode.INTAKE -> io.setStrobe(LedTarget.INTAKE, Color.kGreen, 35)
+            Mode.DISABLED -> io.setBreathe(LedTarget.ALL, teamDim(), 90)
+            Mode.DEFAULT -> io.setSolid(LedTarget.ALL, teamDim())
         }
-    }
-
-    private fun firstSubsystemFault(): Fault? {
-        val order = listOf(
-            Fault.DRIVE_MOTOR_FAIL,
-            Fault.INTAKE_MOTOR_FAIL,
-            Fault.LAUNCHER_MOTOR_FAIL,
-            Fault.HINGE_MOTOR_FAIL
-        )
-        return order.firstOrNull { faults.contains(it)}
     }
 
     private fun teamDim(): Color {
