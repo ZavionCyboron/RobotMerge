@@ -13,6 +13,7 @@ class LedIOLumynUsb(
     private val groupBase: String = "base",
     private val groupIntake: String = "intake",
     private val groupLauncher: String = "launcher",
+    private val groupALL: String = "ALL",
     private val groupNull: String = ""
 ) : LedIO {
 
@@ -24,6 +25,7 @@ class LedIOLumynUsb(
         LedTarget.BASE -> groupBase
         LedTarget.INTAKE ->  groupIntake
         LedTarget.LAUNCHER -> groupLauncher
+        LedTarget.ALL -> groupALL
         LedTarget.NULL -> groupNull
     }
 

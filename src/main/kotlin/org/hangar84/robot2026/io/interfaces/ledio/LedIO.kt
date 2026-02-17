@@ -3,7 +3,7 @@ package org.hangar84.robot2026.io.interfaces.ledio
 import edu.wpi.first.wpilibj.util.Color
 
 
-enum class LedTarget { BASE, INTAKE, LAUNCHER, NULL }
+enum class LedTarget { BASE, INTAKE, LAUNCHER, NULL, ALL }
 
 interface LedIO {
     data class Inputs(
