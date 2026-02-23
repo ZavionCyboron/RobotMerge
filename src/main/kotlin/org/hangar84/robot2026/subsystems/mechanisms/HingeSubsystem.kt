@@ -9,6 +9,8 @@ import org.hangar84.robot2026.telemetry.TelemetryRouter
 class HingeSubsystem(private val io: HingeIO): SubsystemBase() {
     private val inputs = HingeIO.Inputs()
 
+    private var lastMaxPressed = false
+
     companion object {
         private const val MAX_ANGLE_DEGREES = 180.0
     }
@@ -23,11 +25,13 @@ class HingeSubsystem(private val io: HingeIO): SubsystemBase() {
     override fun periodic() {
         io.updateInputs(inputs)
 
-        if (inputs.maxLimitSwitchOneDioPressed) {
-            inputs.angleDeg = MAX_ANGLE_DEGREES
-        } else if (inputs.maxLimitSwitchTwoDioPressed) {
-            inputs.angleDeg = 0.0
+        val maxPressed = inputs.maxLimitSwitchOneDioPressed || inputs.maxLimitSwitchTwoDioPressed
+
+        // Rising-edge: just became pressed
+        if (maxPressed && !lastMaxPressed) {
+            io.calibrateAbsoluteTo(MAX_ANGLE_DEGREES)
         }
+        lastMaxPressed = maxPressed
 
         TelemetryRouter.Hinge.hinge(
             inputs.angleDeg,
@@ -37,9 +41,10 @@ class HingeSubsystem(private val io: HingeIO): SubsystemBase() {
     }
 
     fun setPercentLimited(requested: Double) {
+        val maxPressed = inputs.maxLimitSwitchOneDioPressed || inputs.maxLimitSwitchTwoDioPressed
+
         val withHardStops = when {
-            inputs.maxLimitSwitchOneDioPressed && requested > 0.0 -> 0.0
-            inputs.maxLimitSwitchTwoDioPressed && requested < 0.0 -> 0.0
+            maxPressed && requested > 0.0 -> 0.0
             else -> requested
         }
 
@@ -56,7 +61,7 @@ class HingeSubsystem(private val io: HingeIO): SubsystemBase() {
     ) {
         fun limit(angleDeg: Double, requested: Double): Double {
             val min = minAngle + softBufferDeg
-            val max = maxAngle + softBufferDeg
+            val max = maxAngle - softBufferDeg
 
             if (angleDeg >= max && requested > 0.0) return 0.0
             if (angleDeg <= min && requested < 0.0) return 0.0
