@@ -117,6 +117,10 @@ class MecanumDriveSubsystem(
         VecBuilder.fill(1.0, 1.0, 1.0), // Vision standard deviations
     )
 
+    override fun aimAtTargetCommand(): Command {
+        return Commands.none()
+    }
+
     private val DRIVE_FORWARD_COMMAND: Command =
         Commands.run(
             { drive(0.0, 0.3, 0.0, false) },
