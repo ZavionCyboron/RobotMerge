@@ -9,6 +9,8 @@ interface HingeIO {
 
     fun updateInputs(inputs: Inputs)
 
+    fun calibrateAbsoluteTo(targetAngleDeg: Double) {}
+
     fun setPercent(percent: Double) {}
 
     fun stop() = setPercent(0.0)
