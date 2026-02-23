@@ -1,14 +1,13 @@
 package org.hangar84.robot2026.io.real.mechanismrealio
 
-import edu.wpi.first.wpilibj.DigitalInput
 import com.revrobotics.PersistMode
 import com.revrobotics.ResetMode
+import com.revrobotics.spark.SparkFlex
 import com.revrobotics.spark.SparkLowLevel.MotorType
 import com.revrobotics.spark.config.SparkFlexConfig
-import com.revrobotics.spark.SparkFlex
+import edu.wpi.first.wpilibj.DigitalInput
 import org.hangar84.robot2026.constants.Hinge
 import org.hangar84.robot2026.constants.MaxConfig
-import com.revrobotics.spark.config.LimitSwitchConfig
 import org.hangar84.robot2026.io.interfaces.mechanismio.HingeIO
 
 class RevHingeIO(cfg: Hinge, maxcfg: MaxConfig): HingeIO {
@@ -20,12 +19,9 @@ class RevHingeIO(cfg: Hinge, maxcfg: MaxConfig): HingeIO {
     private val maxLimitSwitchOne = cfg.maxLimitSwitchOneDio?.let { DigitalInput(it) }
     private val maxLimitSwitchTwo = cfg.maxLimitSwitchTwoDio?.let { DigitalInput(it) }
 
-    private val gearRatio = 75
-
     init {
         val config = SparkFlexConfig().apply {
             smartCurrentLimit(currentLimit) // 30 amps
-            limitSwitch.reverseLimitSwitchType(LimitSwitchConfig.Type.kNormallyOpen)
         }
         hinge_Motor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters)
     }
@@ -34,13 +30,25 @@ class RevHingeIO(cfg: Hinge, maxcfg: MaxConfig): HingeIO {
         hinge_Motor.set(percent)
     }
 
+    private var zeroOffsetDeg = 0.0  // calibrate this once
+
+    private fun wrap0to360(deg: Double): Double {
+        var x = deg % 180.0
+        if (x < 0) x += 180.0
+        return x
+    }
+
+    override fun calibrateAbsoluteTo(targetAngleDeg: Double) {
+        val absRot = hinge_Motor.absoluteEncoder.position
+        val rawDeg = absRot * 360.0
+        zeroOffsetDeg = wrap0to360(rawDeg - targetAngleDeg)
+    }
+
     override fun updateInputs(inputs: HingeIO.Inputs) {
-        val motorRotations = hinge_Motor.absoluteEncoder.position
+        val absRot = hinge_Motor.absoluteEncoder.position   // typically 0..1
+        val rawDeg = absRot * 360.0
+        inputs.angleDeg = wrap0to360(rawDeg - zeroOffsetDeg)
 
-        val hingeRotations = motorRotations / gearRatio // the motors rotation divided by the gear ratio
-        val hingeDegrees = hingeRotations * 360.0
-
-        inputs.angleDeg = hingeDegrees
         inputs.maxLimitSwitchOneDioPressed = maxLimitSwitchOne?.let { !it.get() } ?: false
         inputs.maxLimitSwitchTwoDioPressed = maxLimitSwitchTwo?.let { !it.get() } ?: false
     }
