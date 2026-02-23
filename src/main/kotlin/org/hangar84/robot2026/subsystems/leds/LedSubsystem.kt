@@ -24,7 +24,6 @@ class LedSubsystem(private val io: LedIO): SubsystemBase() {
         LAUNCHER_MOTOR_FAIL,
         HINGE_MOTOR_FAIL
     }
-
     private var mode: Mode = Mode.DEFAULT
     private val faults: EnumSet<Fault> = EnumSet.noneOf(Fault::class.java)
 
@@ -50,15 +49,15 @@ class LedSubsystem(private val io: LedIO): SubsystemBase() {
         // --- PRIORITY 1: MAIN ERRORS (Zia + Strips) ---
         when {
             faults.contains(Fault.RIO_BROWNOUT) -> {
-                io.setStrobe(LedTarget.ALL, Color.kRed, 70)
+                io.setStrobe(LedTarget.BASE, Color.kRed, 70)
                 return
             }
             faults.contains(Fault.DS_DISCONNECTED) -> {
-                io.setChase(LedTarget.ALL, Color.kPurple, 70)
+                io.setChase(LedTarget.BASE, Color.kPurple, 70)
                 return
             }
             faults.contains(Fault.LOW_BATTERY) -> {
-                io.setBreathe(LedTarget.ALL, Color.kOrange, 90)
+                io.setBreathe(LedTarget.BASE, Color.kOrange, 90)
                 return
             }
         }
@@ -77,6 +76,9 @@ class LedSubsystem(private val io: LedIO): SubsystemBase() {
                 io.setStrobe(LedTarget.LAUNCHER, Color.kCyan, 120)
                 return
             }
+            faults.contains(Fault.HINGE_MOTOR_FAIL) -> {
+                io.setStrobe(LedTarget.BASE, Color.kDarkOrange, 120)
+            }
         }
 
         // --- PRIORITY 3: NORMAL MODES ---
@@ -94,6 +96,6 @@ class LedSubsystem(private val io: LedIO): SubsystemBase() {
             return if (a.get() == DriverStation.Alliance.Red) Color(0.35, 0.0, 0.0) // dark red
             else Color(0.0, 0.0, 0.35)
         }
-        return Color(0.15, 0.15, 0.15) // Grayscale 15%
+        return Color(0.15, 0.15, 1.0) // Grayscale 15%
     }
 }

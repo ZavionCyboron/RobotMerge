@@ -18,13 +18,11 @@ import org.hangar84.robot2026.constants.RobotType
 import org.hangar84.robot2026.io.interfaces.drivebaseio.GyroIO
 import org.hangar84.robot2026.io.interfaces.drivebaseio.MecanumIO
 import org.hangar84.robot2026.io.interfaces.drivebaseio.SwerveIO
-import org.hangar84.robot2026.io.interfaces.ledio.LedIOMulti
 import org.hangar84.robot2026.io.interfaces.mechanismio.PneumaticsIO
 import org.hangar84.robot2026.io.real.drivebaserealio.AdisGyroIO
 import org.hangar84.robot2026.io.real.drivebaserealio.MaxSwerveIO
 import org.hangar84.robot2026.io.real.drivebaserealio.RevMecanumIO
 import org.hangar84.robot2026.io.real.ledrealio.LedIOLumynUsb
-import org.hangar84.robot2026.io.real.ledrealio.LedIOPwmZia
 import org.hangar84.robot2026.io.real.mechanismrealio.RevHingeIO
 import org.hangar84.robot2026.io.real.mechanismrealio.RevIntakeIO
 import org.hangar84.robot2026.io.real.mechanismrealio.RevLauncherIO
@@ -89,7 +87,6 @@ object RobotContainer {
     val Intake = IntakeSubsystem(
         if (RobotBase.isSimulation()) SimIntakeIO() else RevIntakeIO(sharedCfg.intake, sharedCfg.max_config)
     )
-
     val pneumaticsIO: PneumaticsIO =
         if (isSim) SimPneumaticsIO()
         else RevPneumaticsIO(
@@ -97,16 +94,13 @@ object RobotContainer {
         )
 
     val leds = LedSubsystem(
-        LedIOMulti(
-            LedIOLumynUsb(
-                USBPort.kUSB1,
-                "base",
-                "intake",
-                "launcher",
-                "all"
-            ), // Your ConnectorX
-            LedIOPwmZia(0)                        // Your Zia symbol on PWM 0
-        )
+        LedIOLumynUsb(
+            USBPort.kUSB1,
+            "base",
+            "intake",
+            "launcher",
+            "all"
+        ), // Your ConnectorX             // Your Zia symbol on PWM 0
     )
 
     val pneumatics = PneumaticsSubsystem(pneumaticsIO)
@@ -144,13 +138,15 @@ object RobotContainer {
             val gyro: GyroIO = if (isSim) SimGyroIO() else AdisGyroIO().apply {
                 setYawAdjustmentDegrees(90.0)
             }
-            val swerve: SwerveIO = if (isSim) SimSwerveIO() else MaxSwerveIO(robotCfg.swerve!!, sharedCfg.max_config)
+            val swerveCfg = requireNotNull(robotCfg.swerve) { "robotCfg.swerve is null (check JSON structure + loader)" }
+            val swerve: SwerveIO = if (isSim) SimSwerveIO() else MaxSwerveIO(swerveCfg, sharedCfg.max_config)
             SwerveDriveSubsystem(swerve, gyro, leds)
         }
 
         RobotType.MECANUM -> {
             val gyro: GyroIO = if (isSim) SimGyroIO() else AdisGyroIO()
-            val mecanum: MecanumIO = if (isSim) SimMecanumIO() else RevMecanumIO(robotCfg.mecanum!!, sharedCfg.max_config)
+            val mecanumCfg = requireNotNull(robotCfg.mecanum) { "robotCfg.mecanum is null (check JSON structure + loader)" }
+            val mecanum: MecanumIO = if (isSim) SimMecanumIO() else RevMecanumIO(mecanumCfg, sharedCfg.max_config)
             MecanumDriveSubsystem(mecanum, gyro, leds)
         }
     }
@@ -293,7 +289,7 @@ object RobotContainer {
         }, pneumatics).ignoringDisable(true)
 
         controller.b().whileTrue(hinge.manualUpCommand())
-        controller.y().whileTrue(hinge.manualDownCommmand())
+        controller.y().whileTrue(hinge.manualDownCommand())
     }
 
     // -- Simulation --

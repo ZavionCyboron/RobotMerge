@@ -26,6 +26,8 @@ object TelemetryRouter {
 
     private val swerveTable = NetworkTableInstance.getDefault().getTable("SwerveDrive")
 
+    private val hingeTable: NetworkTable = nt.getTable("Mechanism/Hinge")
+
     private val DrivepowerTable = swerveTable.getSubTable("Power/Drive")
     private val TurnpowerTable = swerveTable.getSubTable("Power/Turning")
 
@@ -61,6 +63,20 @@ object TelemetryRouter {
             measuredData: DoubleArray
         ){
             swerveTable.getEntry("ModuleStates").setDoubleArray(measuredData)
+        }
+    }
+
+    object Hinge {
+        fun hinge(
+            angle_deg: Double,
+            limit_switch_pressed_one: Boolean,
+            limit_switch_pressed_two: Boolean
+        ) {
+            if (!shouldPublish("Pneumatics")) return
+
+            hingeTable.getEntry("Angle Deg").setDouble(angle_deg)
+            hingeTable.getEntry("Max Limit Switch 1").setBoolean(limit_switch_pressed_one)
+            hingeTable.getEntry("Max Limit Switch 2").setBoolean(limit_switch_pressed_two)
         }
     }
 

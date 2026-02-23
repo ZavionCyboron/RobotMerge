@@ -4,9 +4,14 @@ import edu.wpi.first.wpilibj2.command.Command
 import edu.wpi.first.wpilibj2.command.Commands
 import edu.wpi.first.wpilibj2.command.SubsystemBase
 import org.hangar84.robot2026.io.interfaces.mechanismio.HingeIO
+import org.hangar84.robot2026.telemetry.TelemetryRouter
 
 class HingeSubsystem(private val io: HingeIO): SubsystemBase() {
     private val inputs = HingeIO.Inputs()
+
+    companion object {
+        private const val MAX_ANGLE_DEGREES = 180.0
+    }
 
     private val limiter = HingeLimiter(
         0.0,
@@ -17,10 +22,26 @@ class HingeSubsystem(private val io: HingeIO): SubsystemBase() {
 
     override fun periodic() {
         io.updateInputs(inputs)
+
+        if (inputs.maxLimitSwitchOneDioPressed or inputs.maxLimitSwitchTwoDioPressed) {
+            inputs.angleDeg = MAX_ANGLE_DEGREES
+        }
+
+        TelemetryRouter.Hinge.hinge(
+            inputs.angleDeg,
+            inputs.maxLimitSwitchOneDioPressed,
+            inputs.maxLimitSwitchTwoDioPressed
+        )
     }
 
     fun setPercentLimited(requested: Double) {
-        val safe = limiter.limit(inputs.angleDeg, requested = requested)
+        val withHardStops = when {
+            inputs.maxLimitSwitchOneDioPressed && requested > 0.0 -> 0.0
+            inputs.maxLimitSwitchTwoDioPressed && requested > 0.0 -> 0.0
+            else -> requested
+        }
+
+        val safe = limiter.limit(inputs.angleDeg, requested = withHardStops)
         io.setPercent(safe)
     }
 
@@ -56,6 +77,6 @@ class HingeSubsystem(private val io: HingeIO): SubsystemBase() {
     fun manualUpCommand(): Command? =
         Commands.run({setPercentLimited(+0.4)}, this)
 
-    fun manualDownCommmand(): Command? =
+    fun manualDownCommand(): Command? =
         Commands.run({setPercentLimited(-0.4)}, this)
 }

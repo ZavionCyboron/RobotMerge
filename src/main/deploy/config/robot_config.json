@@ -1,14 +1,12 @@
 {
+  "robotType": {
     "swerve": {
       "frontLeftDrivingId": 3,
       "frontLeftTurningId": 4,
-
       "frontRightDrivingId": 1,
       "frontRightTurningId": 2,
-
       "rearLeftDrivingId": 7,
-      "rearLeftTurningId": 6,
-
+      "rearLeftTurningId": 8,
       "rearRightDrivingId": 5,
       "rearRightTurningId": 6
     },
@@ -17,7 +15,8 @@
       "frontRightId": 10,
       "rearLeftId": 11,
       "rearRightId": 12
-    },
+    }
+  },
   "shared": {
     "intake": {
       "leftIntakeMotorId": 13,
@@ -35,7 +34,9 @@
       "bRetractChannel": 3
     },
     "hinge": {
-      "hingeMotorId": 18
+      "hingeMotorId": 18,
+      "maxLimitSwitchOneDio": 1,
+      "maxLimitSwitchTwoDio": 2
     },
     "max_config": {
       "inverted": true,
