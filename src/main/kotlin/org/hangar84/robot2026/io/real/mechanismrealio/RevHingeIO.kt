@@ -35,7 +35,7 @@ class RevHingeIO(cfg: Hinge, maxcfg: MaxConfig): HingeIO {
     }
 
     override fun updateInputs(inputs: HingeIO.Inputs) {
-        val motorRotations = hinge_Motor.encoder.position
+        val motorRotations = hinge_Motor.absoluteEncoder.position
 
         val hingeRotations = motorRotations / gearRatio // the motors rotation divided by the gear ratio
         val hingeDegrees = hingeRotations * 360.0
