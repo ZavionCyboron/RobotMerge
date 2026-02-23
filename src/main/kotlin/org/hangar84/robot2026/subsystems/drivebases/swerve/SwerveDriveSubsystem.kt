@@ -38,15 +38,14 @@ import org.hangar84.robot2026.telemetry.TelemetryRouter
 import org.photonvision.EstimatedRobotPose
 import org.photonvision.PhotonCamera
 import org.photonvision.PhotonPoseEstimator
-import org.photonvision.targeting.PhotonPipelineResult
 import kotlin.jvm.optionals.getOrNull
 
 class SwerveDriveSubsystem(
-
     private val swerveIO: SwerveIO,
     private val gyroIO: GyroIO,
     private val leds: LedSubsystem
 ): Drivetrain() {
+
     companion object {
         internal val MAX_SPEED = Units.MetersPerSecond.of(4.8)
         internal val MAX_ANGULAR_SPEED = Units.RotationsPerSecond.of(1.0)
@@ -111,56 +110,7 @@ class SwerveDriveSubsystem(
 
     private var commandedSpeeds = ChassisSpeeds()
 
-    fun driveRobotCentric(speeds: ChassisSpeeds) {
-        val states = kinematics.toSwerveModuleStates(speeds)
-        SwerveDriveKinematics.desaturateWheelSpeeds(states, maxLinearSpeedMps)
-        swerveIO.setModuleStates(states[0], states[1], states[2], states[3])
-    }
-
-    fun getLatestVisionResult(): PhotonPipelineResult? {
-        return camera.allUnreadResults.lastOrNull()
-    }
     // -- Static Commands --
-
-    fun autoAlignCommand(): Command {
-        return Commands.run({
-            val result = getLatestVisionResult()
-            if (result != null && result.hasTargets()) {
-                val yaw = result.bestTarget.yaw
-                // Simple P-loop for rotation
-                val rotationSpeed = -yaw * 0.05
-                driveRobotCentric(ChassisSpeeds(0.0, 0.0, rotationSpeed))
-            }
-        }, this)
-            .until {
-                val result = getLatestVisionResult()
-                result != null && result.hasTargets() && Math.abs(result.bestTarget.yaw) < 1.5
-            }
-            // Safety: If we don't see the target, don't get stuck forever
-            .withTimeout(5.0)
-            .andThen(Commands.runOnce({ driveRobotCentric(ChassisSpeeds()) }, this))
-    }
-
-    override fun aimAtTargetCommand(): Command = Commands.run({
-        val result = getLatestVisionResult()
-        if (result != null && result.hasTargets()) {
-            val target = result.bestTarget
-            val yawDegrees = target.yaw
-
-            if (Math.abs(yawDegrees) > 1.0) {
-                val rotationSpeed = -yawDegrees * 0.05
-                driveRobotCentric(ChassisSpeeds(0.0, 0.0, rotationSpeed))
-            } else {
-                driveRobotCentric(ChassisSpeeds(0.0, 0.0, 0.0))
-            }
-        } else {
-            driveRobotCentric(ChassisSpeeds(0.0, 0.0, 0.0))
-        }
-    }, this).finallyDo { interrupted ->
-        // The 'interrupted' boolean is required by the finallyDo signature
-        driveRobotCentric(ChassisSpeeds(0.0, 0.0, 0.0))
-    }
-
     internal val PARK_COMMAND: Command = Commands.run({
         val states = arrayOf(
             SwerveModuleState(0.0, Rotation2d.fromDegrees(45.0)),

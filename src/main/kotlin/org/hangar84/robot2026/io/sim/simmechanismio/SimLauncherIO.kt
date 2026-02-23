@@ -25,19 +25,14 @@ class SimLauncherIO : LauncherIO {
     private var appliedVoltsLeft = 0.0
     private var appliedVoltsRight = 0.0
 
-    override fun setLeftPercent(percent: Double) {
-        appliedVoltsLeft = limitVoltage(leftSim, percent * 12.0)
-        leftSim.setInputVoltage(appliedVoltsLeft)
-    }
-
-    override fun setRightPercent(percent: Double) {
-        appliedVoltsRight = limitVoltage(rightSim, percent * 12.0)
-        rightSim.setInputVoltage(appliedVoltsRight)
-    }
-
     override fun setPercent(percent: Double) {
-        setLeftPercent(percent)
-        setRightPercent(percent)
+        val targetVolts = percent * 12.0
+
+        appliedVoltsLeft = limitVoltage(leftSim, targetVolts)
+        appliedVoltsRight = limitVoltage(rightSim, targetVolts)
+
+        leftSim.setInputVoltage(appliedVoltsLeft)
+        rightSim.setInputVoltage(appliedVoltsRight)
     }
 
     private fun limitVoltage(sim: FlywheelSim, requestedVolts: Double): Double {

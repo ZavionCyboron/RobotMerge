@@ -24,6 +24,4 @@ abstract class Drivetrain : SubsystemBase() {
 
     // -- Simulation --
     open fun simulationPeriodic(dtSeconds: Double) {}
-
-    abstract fun aimAtTargetCommand(): Command
 }
