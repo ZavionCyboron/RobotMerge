@@ -87,6 +87,7 @@ object RobotContainer {
     val Intake = IntakeSubsystem(
         if (RobotBase.isSimulation()) SimIntakeIO() else RevIntakeIO(sharedCfg.intake, sharedCfg.max_config)
     )
+
     val pneumaticsIO: PneumaticsIO =
         if (isSim) SimPneumaticsIO()
         else RevPneumaticsIO(
@@ -109,28 +110,13 @@ object RobotContainer {
         NamedCommands.registerCommand(
             "OctupleLaunch",
             Commands.sequence(
-                launcher.pulseCommand(.25),
-                Commands.waitSeconds(.4), // Launch 1st ball.
-                launcher.pulseCommand(.25),
-                Commands.waitSeconds(.4), // Launch 2nd ball.
-                launcher.pulseCommand(.25),
-                Commands.waitSeconds(.4), // Launch 3rd ball.
-                launcher.pulseCommand(.25),
-                Commands.waitSeconds(.4), // Launch 4th ball.
-                launcher.pulseCommand(.25),
-                Commands.waitSeconds(.4), // Launch 5th ball.
-                launcher.pulseCommand(.25),
-                Commands.waitSeconds(.4), // Launch 6th ball.
-                launcher.pulseCommand(.25),
-                Commands.waitSeconds(.4), // Launch 7th ball.
-                launcher.pulseCommand(.25),
-                Commands.waitSeconds(.4), // Launch 8th ball.
-                launcher.pulseCommand(.25),
+                launcher.pulseCommand(2.0),
                 )
         )
         NamedCommands.registerCommand("Intake",Intake.INTAKE_COMMAND.withTimeout(2.0))
         NamedCommands.registerCommand("Lift", pneumatics.extendBothCommand())
         NamedCommands.registerCommand("Retract", pneumatics.retractBothCommand())
+        NamedCommands.registerCommand("align", (drivetrain as SwerveDriveSubsystem).autoAlignCommand())
     }
     // The robot's subsystems
     val drivetrain: Drivetrain = when (robotType) {
@@ -138,15 +124,13 @@ object RobotContainer {
             val gyro: GyroIO = if (isSim) SimGyroIO() else AdisGyroIO().apply {
                 setYawAdjustmentDegrees(90.0)
             }
-            val swerveCfg = requireNotNull(robotCfg.swerve) { "robotCfg.swerve is null (check JSON structure + loader)" }
-            val swerve: SwerveIO = if (isSim) SimSwerveIO() else MaxSwerveIO(swerveCfg, sharedCfg.max_config)
+            val swerve: SwerveIO = if (isSim) SimSwerveIO() else MaxSwerveIO(robotCfg.swerve!!, sharedCfg.max_config)
             SwerveDriveSubsystem(swerve, gyro, leds)
         }
 
         RobotType.MECANUM -> {
             val gyro: GyroIO = if (isSim) SimGyroIO() else AdisGyroIO()
-            val mecanumCfg = requireNotNull(robotCfg.mecanum) { "robotCfg.mecanum is null (check JSON structure + loader)" }
-            val mecanum: MecanumIO = if (isSim) SimMecanumIO() else RevMecanumIO(mecanumCfg, sharedCfg.max_config)
+            val mecanum: MecanumIO = if (isSim) SimMecanumIO() else RevMecanumIO(robotCfg.mecanum!!, sharedCfg.max_config)
             MecanumDriveSubsystem(mecanum, gyro, leds)
         }
     }
@@ -166,6 +150,7 @@ object RobotContainer {
 
 
     init {
+        setupCameras()
         TelemetryRouter.setBase(
             if (isSim) {
                 "${robotType.name}/Sim"
@@ -195,7 +180,28 @@ object RobotContainer {
         SimHooks.init()
         configureBindings()
     }
+    private fun setupCameras() {
+        // Define the stream URLs
+        val frontStreamUrl = "mjpeg:http://10.72.71.3:5800/stream.mjpg"
+        val rearStreamUrl = "mjpeg:http://10.72.71.4:5800/stream.mjpg"
 
+        try {
+            val inst = edu.wpi.first.networktables.NetworkTableInstance.getDefault()
+
+            // Setup Front Camera
+            val frontTable = inst.getTable("CameraPublisher/FrontCamera")
+            frontTable.getEntry(".type").setString("HttpCamera")
+            frontTable.getEntry("streams").setStringArray(arrayOf(frontStreamUrl))
+
+            // Setup Rear Camera
+            val rearTable = inst.getTable("CameraPublisher/RearCamera")
+            rearTable.getEntry(".type").setString("HttpCamera")
+            rearTable.getEntry("streams").setStringArray(arrayOf(rearStreamUrl))
+
+        } catch (e: Exception) {
+            DriverStation.reportError("Failed to publish IP Camera streams: ${e.message}", true)
+        }
+    }
     private fun configureBindings() {
 
         val xLimiter = SlewRateLimiter(5.0)   // m/s^2 style feel
@@ -288,8 +294,9 @@ object RobotContainer {
             pneumatics.retractBoth() // Extra safety: retract when disabling
         }, pneumatics).ignoringDisable(true)
 
-        controller.b().whileTrue(hinge.manualUpCommand())
-        controller.y().whileTrue(hinge.manualDownCommand())
+        controller.povUp().whileTrue(hinge.manualUpCommand())
+        controller.povDown().whileTrue(hinge.manualDownCommand())
+        controller.b().whileTrue(drivetrain.aimAtTargetCommand())
     }
 
     // -- Simulation --

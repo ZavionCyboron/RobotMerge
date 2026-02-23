@@ -13,6 +13,12 @@
         {
           "type": "named",
           "data": {
+            "name": "align"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
             "name": "Intake"
           }
         },
@@ -31,6 +37,12 @@
         {
           "type": "named",
           "data": {
+            "name": "align"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
             "name": "OctupleLaunch"
           }
         },
@@ -44,6 +56,12 @@
           "type": "path",
           "data": {
             "pathName": "Hub To Climb"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "align"
           }
         },
         {

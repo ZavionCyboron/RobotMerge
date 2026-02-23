@@ -26,6 +26,7 @@ class LauncherSubsystem(val io: LauncherIO) : SubsystemBase() {
         MechanismLigament2d("Flywheel", 1.0, 0.0, 6.0, Color8Bit(0, 255, 0))
     )
     init {
+        launch_State = false
         Trigger {  TelemetryRouter.Launcher.launcherSwitch(launch_Switch) }
             .whileTrue(LAUNCH_COMMAND)
     }
@@ -33,19 +34,22 @@ class LauncherSubsystem(val io: LauncherIO) : SubsystemBase() {
     // - Commands -
     internal val LAUNCH_COMMAND
         get() = Commands.sequence(
-            Commands.runOnce(
-                { io.setRightPercent(1.0)},
-                this
-            ),
+            Commands.runOnce({
+                launch_State = true
+                io.setRightPercent(1.0)
+            }, this),
 
             Commands.waitSeconds(.5),
 
-            Commands.runOnce(
-                { io.setLeftPercent(1.0) },
-                this
-            ),
+            Commands.runOnce({
+                io.setLeftPercent(1.0)
+            }, this),
+
             Commands.run({}, this),
-        ).finallyDo {_: Boolean -> io.stop()}
+        ).finallyDo { _: Boolean ->
+            io.stop()
+            launch_State = false
+        }
 
     fun pulseCommand(seconds: Double): Command =
         LAUNCH_COMMAND.withTimeout(seconds)

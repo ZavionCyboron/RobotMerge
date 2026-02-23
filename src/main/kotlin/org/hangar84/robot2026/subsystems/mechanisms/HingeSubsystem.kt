@@ -23,8 +23,10 @@ class HingeSubsystem(private val io: HingeIO): SubsystemBase() {
     override fun periodic() {
         io.updateInputs(inputs)
 
-        if (inputs.maxLimitSwitchOneDioPressed or inputs.maxLimitSwitchTwoDioPressed) {
+        if (inputs.maxLimitSwitchOneDioPressed) {
             inputs.angleDeg = MAX_ANGLE_DEGREES
+        } else if (inputs.maxLimitSwitchTwoDioPressed) {
+            inputs.angleDeg = 0.0
         }
 
         TelemetryRouter.Hinge.hinge(
@@ -37,7 +39,7 @@ class HingeSubsystem(private val io: HingeIO): SubsystemBase() {
     fun setPercentLimited(requested: Double) {
         val withHardStops = when {
             inputs.maxLimitSwitchOneDioPressed && requested > 0.0 -> 0.0
-            inputs.maxLimitSwitchTwoDioPressed && requested > 0.0 -> 0.0
+            inputs.maxLimitSwitchTwoDioPressed && requested < 0.0 -> 0.0
             else -> requested
         }
 
