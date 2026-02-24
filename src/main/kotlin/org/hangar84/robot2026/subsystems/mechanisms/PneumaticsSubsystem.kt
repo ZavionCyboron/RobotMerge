@@ -22,6 +22,7 @@ class PneumaticsSubsystem(private val io: PneumaticsIO) : SubsystemBase() {
         currentSelection == Selection.BOTH
 
     private var systemEnabled = true
+    fun isSystemEnabled(): Boolean = systemEnabled
 
     private val f = false
 
@@ -29,7 +30,7 @@ class PneumaticsSubsystem(private val io: PneumaticsIO) : SubsystemBase() {
         TelemetryRouter.Pneumatics.Extend_Left.setBoolean(f)
         TelemetryRouter.Pneumatics.Extend_Right.setBoolean(f)
         TelemetryRouter.Pneumatics.Extend_Both.setBoolean(f)
-        TelemetryRouter.Pneumatics.setCompressor.setBoolean(f)
+        TelemetryRouter.Pneumatics.setCompressor.setBoolean(true)
         Trigger { TelemetryRouter.Pneumatics.Extend_Left.getBoolean(f) }
             .whileTrue(extendACommand().onlyIf { systemEnabled })
             .onFalse(retractACommand())
@@ -42,7 +43,7 @@ class PneumaticsSubsystem(private val io: PneumaticsIO) : SubsystemBase() {
             .whileTrue(extendBothCommand().onlyIf { systemEnabled })
             .onFalse(retractBothCommand())
 
-        Trigger{ TelemetryRouter.Pneumatics.setCompressor.getBoolean(f) }
+        Trigger{ TelemetryRouter.Pneumatics.setCompressor.getBoolean(true) }
             .whileTrue(enableCompressorCommand().onlyIf { systemEnabled })
             .onFalse(disableCompressorCommand())
     }
@@ -92,15 +93,6 @@ class PneumaticsSubsystem(private val io: PneumaticsIO) : SubsystemBase() {
             Selection.BOTH -> Selection.LEFT
         }
         setSelection(next)
-    }
-
-    fun smartToggle() {
-        if (!systemEnabled) return
-        when(currentSelection) {
-            Selection.LEFT -> toggleA()
-            Selection.RIGHT -> toggleB()
-            Selection.BOTH -> toggleBoth()
-        }
     }
 
     fun smartExtend() {
