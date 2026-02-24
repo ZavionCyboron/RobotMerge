@@ -93,6 +93,7 @@ object RobotContainer {
         else RevPneumaticsIO(
             sharedCfg.pneumatics
         )
+    val pneumatics = PneumaticsSubsystem(pneumaticsIO)
 
     val leds = LedSubsystem(
         LedIOLumynUsb(
@@ -104,8 +105,6 @@ object RobotContainer {
         ), // Your ConnectorX             // Your Zia symbol on PWM 0
     )
 
-    val pneumatics = PneumaticsSubsystem(pneumaticsIO)
-
     private fun registerPathplannerEvents() {
         NamedCommands.registerCommand(
             "OctupleLaunch",
@@ -114,8 +113,8 @@ object RobotContainer {
                 )
         )
         NamedCommands.registerCommand("Intake",Intake.INTAKE_COMMAND.withTimeout(2.0))
-        NamedCommands.registerCommand("Lift", pneumatics.extendBothCommand())
-        NamedCommands.registerCommand("Retract", pneumatics.retractBothCommand())
+        NamedCommands.registerCommand("Lift", pneumatics.extendBothCommand().onlyIf { pneumatics.isSystemEnabled() })
+        NamedCommands.registerCommand("Retract", pneumatics.retractBothCommand().onlyIf { pneumatics.isSystemEnabled() })
         NamedCommands.registerCommand("align", (drivetrain as SwerveDriveSubsystem).autoAlignCommand())
     }
     // The robot's subsystems
@@ -210,7 +209,7 @@ object RobotContainer {
                 { true }
             )
             (drivetrain as? SwerveDriveSubsystem)?.let { swerve ->
-                controller.a().whileTrue(swerve.PARK_COMMAND)
+                controller.y().whileTrue(swerve.PARK_COMMAND)
             }
         }
 
@@ -255,8 +254,15 @@ object RobotContainer {
             Commands.runOnce({ pneumatics.setSystemEnabled(true) }, pneumatics)
         )
 
-        controller.rightBumper().onTrue(Commands.runOnce({ pneumatics.smartExtend() }, pneumatics))
-        controller.leftBumper().onTrue(Commands.runOnce({ pneumatics.smartRetract() }, pneumatics))
+        controller.rightBumper().onTrue(Commands.runOnce({ pneumatics.smartExtend() }, pneumatics).onlyIf { pneumatics.isSystemEnabled() })
+        controller.leftBumper().onTrue(Commands.runOnce({ pneumatics.smartRetract() }, pneumatics).onlyIf { pneumatics.isSystemEnabled() })
+        controller.a().toggleOnTrue(
+            Commands.startEnd(
+                { pneumatics.setSystemEnabled(true) },  // When toggled ON
+                { pneumatics.setSystemEnabled(false) }, // When toggled OFF
+                pneumatics
+            ).ignoringDisable(true)
+        )
 
         controller.x().onTrue(
             Commands.runOnce({
