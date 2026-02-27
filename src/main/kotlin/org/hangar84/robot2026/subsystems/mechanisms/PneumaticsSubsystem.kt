@@ -166,5 +166,5 @@ class PneumaticsSubsystem(private val io: PneumaticsIO) : SubsystemBase() {
 
     fun extendBothCommand(): Command = Commands.runOnce({ extendBoth() }, this)
     fun retractBothCommand(): Command = Commands.runOnce({ retractBoth() }, this)
-    //fun toggleBothCommand(): Command = Commands.runOnce({ toggleBoth() }, this)
+    fun toggleBothCommand(): Command = Commands.runOnce({ toggleBoth() }, this)
 }
