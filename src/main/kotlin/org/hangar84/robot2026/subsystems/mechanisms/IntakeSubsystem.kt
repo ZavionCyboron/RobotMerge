@@ -57,8 +57,11 @@ class IntakeSubsystem(val io: IntakeIO) : SubsystemBase() {
 
         Intake.intake(
             inputs.leftAppliedOutput,
+            inputs.rightAppliedOutput,
             inputs.leftCurrentAmps,
+            inputs.rightCurrentAmps,
             inputs.leftTempCelcius,
+            inputs.rightTempCelcius,
             TelemetryRouter.Intake.getIntakeSpeed()
         )
     }

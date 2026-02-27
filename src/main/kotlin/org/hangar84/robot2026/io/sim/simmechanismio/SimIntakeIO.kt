@@ -17,15 +17,22 @@ class SimIntakeIO : IntakeIO {
         LinearSystemId.createFlywheelSystem(launcherGearbox, momentOfInertia, gearing),
         launcherGearbox
     )
+    private val RightSim = FlywheelSim(
+        LinearSystemId.createFlywheelSystem(launcherGearbox, momentOfInertia, gearing),
+        launcherGearbox
+    )
 
     private var appliedVoltsLeft = 0.0
+    private var appliedVoltsRight = 0.0
 
     override fun setPercent(percent: Double) {
         val targetVolts = percent * 12.0
 
         appliedVoltsLeft = limitVoltage(leftSim, targetVolts)
+        appliedVoltsRight = limitVoltage(RightSim, targetVolts)
 
         leftSim.setInputVoltage(appliedVoltsLeft)
+        RightSim.setInputVoltage(appliedVoltsRight)
     }
 
     private fun limitVoltage(sim: FlywheelSim, requestedVolts: Double): Double {
@@ -43,10 +50,11 @@ class SimIntakeIO : IntakeIO {
 
     override fun updateInputs(inputs: IntakeIO.Inputs) {
         inputs.leftAppliedOutput = appliedVoltsLeft / 12.0
-
+        inputs.rightAppliedOutput = appliedVoltsRight / 12.0
         inputs.leftCurrentAmps = leftSim.currentDrawAmps
-
+        inputs.rightCurrentAmps= RightSim.currentDrawAmps
         inputs.leftTempCelcius = 22.0
+        inputs.rightTempCelcius = 22.0
     }
 
     fun simulationPeriodic(dtSeconds: Double) {
