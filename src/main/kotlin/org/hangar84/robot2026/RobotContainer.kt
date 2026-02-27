@@ -104,19 +104,6 @@ object RobotContainer {
             "all"
         ), // Your ConnectorX             // Your Zia symbol on PWM 0
     )
-
-    private fun registerPathplannerEvents() {
-        NamedCommands.registerCommand(
-            "OctupleLaunch",
-            Commands.sequence(
-                launcher.pulseCommand(2.0),
-                )
-        )
-        NamedCommands.registerCommand("Intake",Intake.INTAKE_COMMAND.withTimeout(2.0))
-        NamedCommands.registerCommand("Lift", pneumatics.extendBothCommand().onlyIf { pneumatics.isSystemEnabled() })
-        NamedCommands.registerCommand("Retract", pneumatics.retractBothCommand().onlyIf { pneumatics.isSystemEnabled() })
-        NamedCommands.registerCommand("align", (drivetrain as SwerveDriveSubsystem).autoAlignCommand())
-    }
     // The robot's subsystems
     val drivetrain: Drivetrain = when (robotType) {
         RobotType.SWERVE -> {
@@ -132,6 +119,19 @@ object RobotContainer {
             val mecanum: MecanumIO = if (isSim) SimMecanumIO() else RevMecanumIO(robotCfg.mecanum!!, sharedCfg.max_config)
             MecanumDriveSubsystem(mecanum, gyro, leds)
         }
+    }
+
+    private fun registerPathplannerEvents() {
+        NamedCommands.registerCommand(
+            "OctupleLaunch",
+            Commands.sequence(
+                launcher.pulseCommand(2.0),
+            )
+        )
+        NamedCommands.registerCommand("Intake",Intake.INTAKE_COMMAND.withTimeout(2.0))
+        NamedCommands.registerCommand("Lift", pneumatics.extendBothCommand().onlyIf { pneumatics.isSystemEnabled() })
+        NamedCommands.registerCommand("Retract", pneumatics.retractBothCommand().onlyIf { pneumatics.isSystemEnabled() })
+        NamedCommands.registerCommand("Align", (drivetrain as? SwerveDriveSubsystem)?.autoAlignCommand())
     }
 
     val speeds = drivetrain.getChassisSpeeds() // Ensure your Drivetrain interface has this
