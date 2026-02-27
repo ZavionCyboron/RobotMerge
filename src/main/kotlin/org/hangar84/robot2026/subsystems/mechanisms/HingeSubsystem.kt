@@ -44,8 +44,8 @@ class HingeSubsystem(private val io: HingeIO): SubsystemBase() {
         val maxPressed = inputs.maxLimitSwitchOneDioPressed || inputs.maxLimitSwitchTwoDioPressed
 
         val withHardStops = when {
-            maxPressed && requested > 0.0 -> 0.0
-            else -> requested
+            maxPressed && requested > 0.0 -> 0.0  // block up only
+            else -> requested                      // allow down
         }
 
         val safe = limiter.limit(inputs.angleDeg, requested = withHardStops)
@@ -63,8 +63,8 @@ class HingeSubsystem(private val io: HingeIO): SubsystemBase() {
             val min = minAngle + softBufferDeg
             val max = maxAngle - softBufferDeg
 
-            if (angleDeg >= max && requested > 0.0) return 0.0
-            if (angleDeg <= min && requested < 0.0) return 0.0
+            if (angleDeg >= 180.0 && requested > 0.0) return 0.0
+            if (angleDeg <= 0.0 && requested < 0.0) return 0.0
 
             return when {
                 requested > 0.0 && angleDeg > (max - slowZoneDeg) -> {
@@ -85,5 +85,8 @@ class HingeSubsystem(private val io: HingeIO): SubsystemBase() {
         Commands.run({setPercentLimited(+0.4)}, this)
 
     fun manualDownCommand(): Command? =
-        Commands.run({setPercentLimited(-0.4)}, this)
+        Commands.run({io.setPercent(-0.4)}, this)
+
+    fun stopCommand(): Command? =
+        Commands.run({setPercentLimited(0.0)}, this)
 }

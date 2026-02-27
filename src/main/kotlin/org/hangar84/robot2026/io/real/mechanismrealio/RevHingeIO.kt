@@ -16,12 +16,21 @@ class RevHingeIO(cfg: Hinge, maxcfg: MaxConfig): HingeIO {
 
     private val hinge_Motor = SparkFlex(cfg.hingeMotorId, MotorType.kBrushless)
 
+    private val relEncoder = hinge_Motor.encoder
+    private val gearRatio = 75
+
+    private val positionConversionFactor = 360.0 / gearRatio
+    private val velocityConversionFactor = 360.0 / gearRatio/ 60.0
+
     private val maxLimitSwitchOne = cfg.maxLimitSwitchOneDio?.let { DigitalInput(it) }
     private val maxLimitSwitchTwo = cfg.maxLimitSwitchTwoDio?.let { DigitalInput(it) }
 
     init {
         val config = SparkFlexConfig().apply {
             smartCurrentLimit(currentLimit) // 30 amps
+                .encoder
+                .positionConversionFactor(positionConversionFactor)
+                .velocityConversionFactor(velocityConversionFactor)
         }
         hinge_Motor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters)
     }
@@ -39,15 +48,11 @@ class RevHingeIO(cfg: Hinge, maxcfg: MaxConfig): HingeIO {
     }
 
     override fun calibrateAbsoluteTo(targetAngleDeg: Double) {
-        val absRot = hinge_Motor.absoluteEncoder.position
-        val rawDeg = absRot * 360.0
-        zeroOffsetDeg = wrap0to360(rawDeg - targetAngleDeg)
+        relEncoder.position = targetAngleDeg
     }
 
     override fun updateInputs(inputs: HingeIO.Inputs) {
-        val absRot = hinge_Motor.absoluteEncoder.position   // typically 0..1
-        val rawDeg = absRot * 360.0
-        inputs.angleDeg = wrap0to360(rawDeg - zeroOffsetDeg)
+        inputs.angleDeg = relEncoder.position
 
         inputs.maxLimitSwitchOneDioPressed = maxLimitSwitchOne?.let { !it.get() } ?: false
         inputs.maxLimitSwitchTwoDioPressed = maxLimitSwitchTwo?.let { !it.get() } ?: false
