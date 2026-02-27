@@ -5,6 +5,7 @@ import com.pathplanner.lib.auto.NamedCommands
 import edu.wpi.first.math.MathUtil
 import edu.wpi.first.math.filter.SlewRateLimiter
 import edu.wpi.first.math.geometry.Rotation2d
+import edu.wpi.first.net.WebServer
 import edu.wpi.first.wpilibj.*
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard
@@ -149,6 +150,8 @@ object RobotContainer {
 
 
     init {
+        WebServer.start(5800, Filesystem.getDeployDirectory().getPath());
+
         TelemetryRouter.setBase(
             if (isSim) {
                 "${robotType.name}/Sim"
