@@ -265,8 +265,11 @@ object TelemetryRouter {
         val Intake_State: GenericEntry = intakeTable.getTopic("Intake State").getGenericEntry()
         fun intake(
             leftAppliedOutput: Double,
+            RightAppliedOutput: Double,
             leftCurrentAmps: Double,
+            rightCurrentAmps: Double,
             leftTempCelsius: Double,
+            RightTempCelsius: Double,
             intakeSpeed: Double,
         ) {
             if (!shouldPublish("Intake")) return
@@ -275,8 +278,11 @@ object TelemetryRouter {
                 .getTable("Mechanism/Intake")
 
             table.getEntry("LeftAppliedVoltage").setDouble(leftAppliedOutput * 12.0)
+            table.getEntry("RightAppliedVoltage").setDouble(RightAppliedOutput * 12.0)
             table.getEntry("LeftCurrentAmps").setDouble(leftCurrentAmps)
+            table.getEntry("RightCurrentAmps").setDouble(rightCurrentAmps)
             table.getEntry("LeftTempCelsius").setDouble(leftTempCelsius)
+            table.getEntry("RightTempCelsius").setDouble(RightTempCelsius)
             table.getEntry("Intake Speed").setDouble(intakeSpeed)
         }
         fun getIntakeSpeed(default: Double = 1.0): Double =

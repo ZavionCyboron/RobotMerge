@@ -35,7 +35,10 @@ class RevIntakeIO(cfg: Intake, maxcfg: MaxConfig) : IntakeIO {
 
     override fun updateInputs(inputs: IntakeIO.Inputs) {
         inputs.leftAppliedOutput = leftIntake.appliedOutput
+        inputs.rightAppliedOutput = rightIntake.appliedOutput
         inputs.leftCurrentAmps = leftIntake.outputCurrent
+        inputs.rightCurrentAmps = rightIntake.outputCurrent
         inputs.leftTempCelcius = leftIntake.motorTemperature
+        inputs.rightTempCelcius = rightIntake.motorTemperature
     }
 }
