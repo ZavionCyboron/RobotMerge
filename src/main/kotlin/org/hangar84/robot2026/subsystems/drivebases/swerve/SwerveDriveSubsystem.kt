@@ -40,6 +40,7 @@ import org.photonvision.PhotonCamera
 import org.photonvision.PhotonPoseEstimator
 import org.photonvision.targeting.PhotonPipelineResult
 import kotlin.jvm.optionals.getOrNull
+import kotlin.math.abs
 
 class SwerveDriveSubsystem(
 
@@ -98,17 +99,26 @@ class SwerveDriveSubsystem(
     private val camera = PhotonCamera("FrontCamera")
     private val fieldLayout = AprilTagFieldLayout.loadField(AprilTagFields.k2026RebuiltAndymark)
     private val cameraOffset = Transform3d(
-        Translation3d(Units.Inches.of(-8.0), Units.Inches.of(9.0), Units.Inches.of(12.0)),
+        Translation3d(
+            Units.Inches.of(-8.0).`in`(Units.Meters),
+            Units.Inches.of(9.0).`in`(Units.Meters),
+            Units.Inches.of(12.0).`in`(Units.Meters)
+        ),
         Rotation3d(0.0, 0.0, 0.0)
     )
     private val photonEstimator = PhotonPoseEstimator(fieldLayout, cameraOffset)
 
-    private val estimatedRobotPose: EstimatedRobotPose?
-        get() = camera.allUnreadResults
-            .asSequence()
-            .mapNotNull { photonEstimator.estimateLowestAmbiguityPose(it).getOrNull() }
-            .firstOrNull()
+    private val autoCorrectDistanceM = 1.2
+    private val autoCorrectXKp = 0.8
+    private val autoCorrectYKp = 1.2
+    private val autoCorrectOmegaKp = 0.04
 
+    private fun clamp(value: Double, magnitude: Double): Double = value.coerceIn(-magnitude, magnitude)
+
+    private fun estimatedRobotPoses(): List<EstimatedRobotPose> {
+        return camera.allUnreadResults
+            .mapNotNull { result -> photonEstimator.estimateLowestAmbiguityPose(result).orElse(null) }
+    }
     private var commandedSpeeds = ChassisSpeeds()
 
     fun driveRobotCentric(speeds: ChassisSpeeds) {
@@ -134,7 +144,7 @@ class SwerveDriveSubsystem(
         }, this)
             .until {
                 val result = getLatestVisionResult()
-                result != null && result.hasTargets() && Math.abs(result.bestTarget.yaw) < 1.5
+                result != null && result.hasTargets() && abs(result.bestTarget.yaw) < 1.5
             }
             // Safety: If we don't see the target, don't get stuck forever
             .withTimeout(5.0)
@@ -147,9 +157,19 @@ class SwerveDriveSubsystem(
             val target = result.bestTarget
             val yawDegrees = target.yaw
 
-            if (Math.abs(yawDegrees) > 1.0) {
-                val rotationSpeed = -yawDegrees * 0.05
-                driveRobotCentric(ChassisSpeeds(0.0, 0.0, rotationSpeed))
+            val cameraToTarget = target.bestCameraToTarget
+            val rangeErrorMeters = cameraToTarget.x - autoCorrectDistanceM
+            val lateralErrorMeters = cameraToTarget.y
+
+            if (abs(yawDegrees) > 1.0 ||
+                abs(rangeErrorMeters) > 0.05 ||
+                abs(lateralErrorMeters) > 0.05
+            ) {
+                val xSpeed = clamp(-rangeErrorMeters * autoCorrectXKp, 1.25)
+                val ySpeed = clamp(-lateralErrorMeters * autoCorrectYKp, 1.25)
+                val rotationSpeed = clamp(-yawDegrees * autoCorrectOmegaKp, 1.5)
+
+                driveRobotCentric(ChassisSpeeds(xSpeed, ySpeed, rotationSpeed))
             } else {
                 driveRobotCentric(ChassisSpeeds(0.0, 0.0, 0.0))
             }
@@ -220,10 +240,24 @@ class SwerveDriveSubsystem(
 
         // Vision Updates (Real World Only)
         if (!isSim) {
-            estimatedRobotPose?.let { estimate ->
-                SmartDashboard.putBoolean("Swerve/Vision/HasEstimate", true)
-                poseEstimator.addVisionMeasurement(estimate.estimatedPose.toPose2d(), estimate.timestampSeconds)
-            } ?: SmartDashboard.putBoolean("Swerve/Vision/HasEstimate", false)
+            val estimates = estimatedRobotPoses()
+            SmartDashboard.putBoolean("Swerve/Vision/HasEstimate", estimates.isNotEmpty())
+
+            estimates.forEach { estimate ->
+                val distanceToEstimate =
+                    estimate.estimatedPose.toPose2d().translation.getDistance(poseEstimator.estimatedPosition.translation)
+
+                val measurementNoise = VecBuilder.fill(
+                    0.3 + (distanceToEstimate * 0.3),
+                    0.3 + (distanceToEstimate * 0.3),
+                    0.5 + (distanceToEstimate * 0.5)
+                )
+                poseEstimator.addVisionMeasurement(
+                    estimate.estimatedPose.toPose2d(),
+                    estimate.timestampSeconds,
+                    measurementNoise
+                )
+            }
         }
 
         publishSwerveTelemetry()
