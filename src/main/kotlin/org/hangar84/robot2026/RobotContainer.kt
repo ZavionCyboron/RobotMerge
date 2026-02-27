@@ -279,6 +279,7 @@ object RobotContainer {
 
         controller.povUp().whileTrue(hinge.manualUpCommand())
         controller.povDown().whileTrue(hinge.manualDownCommand())
+        controller.povLeft().whileTrue(hinge.stopCommand())
         controller.b().whileTrue(drivetrain.aimAtTargetCommand())
     }
 
