@@ -21,6 +21,7 @@ import edu.wpi.first.math.kinematics.SwerveDriveKinematics
 import edu.wpi.first.math.kinematics.SwerveDriveOdometry
 import edu.wpi.first.math.kinematics.SwerveModulePosition
 import edu.wpi.first.math.kinematics.SwerveModuleState
+import edu.wpi.first.networktables.NetworkTable
 import edu.wpi.first.networktables.NetworkTableInstance
 import edu.wpi.first.units.Units
 import edu.wpi.first.wpilibj.DriverStation
@@ -30,6 +31,8 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard
 import edu.wpi.first.wpilibj2.command.Command
 import edu.wpi.first.wpilibj2.command.Commands
 import org.hangar84.robot2026.RobotContainer
+import org.hangar84.robot2026.constants.ConfigLoader
+import org.hangar84.robot2026.constants.RobotType
 import org.hangar84.robot2026.io.interfaces.drivebaseio.GyroIO
 import org.hangar84.robot2026.io.interfaces.drivebaseio.SwerveIO
 import org.hangar84.robot2026.subsystems.drivebases.Drivetrain
@@ -84,14 +87,9 @@ class SwerveDriveSubsystem(
         Translation2d(-WHEEL_BASE_M / 2.0, -TRACK_WIDTH_M / 2.0)
     )
 
-    private val zeroPositions = arrayOf(
-        SwerveModulePosition(), SwerveModulePosition(),
-        SwerveModulePosition(), SwerveModulePosition()
-    )
-
-    internal var odometry = SwerveDriveOdometry(kinematics, Rotation2d(), zeroPositions)
+    internal var odometry = SwerveDriveOdometry(kinematics, Rotation2d(), modulePositionsFromInputs())
     internal var poseEstimator = SwerveDrivePoseEstimator(
-        kinematics, Rotation2d(), zeroPositions, Pose2d(),
+        kinematics, Rotation2d(), modulePositionsFromInputs(), Pose2d(),
         VecBuilder.fill(0.1, 0.1, 0.1), VecBuilder.fill(1.0, 1.0, 1.0)
     )
 
