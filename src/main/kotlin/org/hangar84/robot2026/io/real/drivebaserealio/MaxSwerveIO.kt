@@ -13,13 +13,7 @@ import org.hangar84.robot2026.subsystems.drivebases.swerve.`swerve-configs`.Swer
 class MaxSwerveIO(cfg: Swerve, maxcfg: MaxConfig) : SwerveIO {
 
     private val currentLimit = maxcfg.currentLimit + 10
-    private val invertedTrue = maxcfg.inverted
 
-    private val rrDrivingConfig = SparkMaxConfig().apply {
-        apply(drivingConfig)
-        inverted(invertedTrue) // true
-        smartCurrentLimit(currentLimit) // 40 amps
-    }
 
     private val fl: MAXSwerveModule = MAXSwerveModule(
         cfg.frontLeftDrivingId,
@@ -28,7 +22,6 @@ class MaxSwerveIO(cfg: Swerve, maxcfg: MaxConfig) : SwerveIO {
         drivingConfig,
         turningConfig
     )
-
     private val fr: MAXSwerveModule = MAXSwerveModule(
         cfg.frontRightDrivingId,
         cfg.frontRightTurningId,
@@ -36,11 +29,10 @@ class MaxSwerveIO(cfg: Swerve, maxcfg: MaxConfig) : SwerveIO {
         drivingConfig,
         turningConfig
     )
-
     private val rl: MAXSwerveModule = MAXSwerveModule(
         cfg.rearLeftDrivingId,
         cfg.rearLeftTurningId,
-        Degrees.of(180.0),
+        Degrees.of(90.0),
         drivingConfig,
         turningConfig
     )
@@ -48,8 +40,8 @@ class MaxSwerveIO(cfg: Swerve, maxcfg: MaxConfig) : SwerveIO {
     private val rr: MAXSwerveModule = MAXSwerveModule(
         cfg.rearRightDrivingId,
         cfg.rearRightTurningId,
-        Degrees.of(90.0),
-        rrDrivingConfig,
+        Degrees.of(180.0),
+        drivingConfig,
         turningConfig
     )
 
