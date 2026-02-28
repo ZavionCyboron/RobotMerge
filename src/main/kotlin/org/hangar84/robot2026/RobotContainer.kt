@@ -5,6 +5,7 @@ import com.pathplanner.lib.auto.NamedCommands
 import edu.wpi.first.math.MathUtil
 import edu.wpi.first.math.filter.SlewRateLimiter
 import edu.wpi.first.math.geometry.Rotation2d
+import edu.wpi.first.networktables.NetworkTableInstance
 import edu.wpi.first.wpilibj.*
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard
@@ -111,6 +112,10 @@ object RobotContainer {
                 setYawAdjustmentDegrees(90.0)
             }
             val swerve: SwerveIO = if (isSim) SimSwerveIO() else MaxSwerveIO(robotCfg.swerve!!, sharedCfg.max_config)
+            SmartDashboard.putNumber("Front Left Offsets", robotCfg.swerve!!.frontLeftChassisOffsetDeg)
+            SmartDashboard.putNumber("Front Right Offsets", robotCfg.swerve.frontRightChassisOffsetDeg)
+            SmartDashboard.putNumber("Rear Left Offsets", robotCfg.swerve.rearLeftChassisOffsetDeg)
+            SmartDashboard.putNumber("Rear Right Offsets", robotCfg.swerve.rearRightChassisOffsetDeg)
             SwerveDriveSubsystem(swerve, gyro, leds)
         }
 
@@ -203,10 +208,10 @@ object RobotContainer {
             drivetrain.defaultCommand =
                 driveCommand(
                 drivetrain,
-                { xLimiter.calculate(shapedAxis(-controller.leftY)) * maxV},
-                { yLimiter.calculate(shapedAxis(-controller.leftX)) * maxV },
-                { rotLimiter.calculate(shapedAxis(-controller.rightX)) * maxW},
-                { true }
+                { -shapedAxis(controller.leftY) * maxV},
+                { -shapedAxis(controller.leftX) * maxV },
+                { -shapedAxis(controller.rightX) * maxW},
+                { false }
             )
             (drivetrain as? SwerveDriveSubsystem)?.let { swerve ->
                 controller.y().whileTrue(swerve.PARK_COMMAND)
