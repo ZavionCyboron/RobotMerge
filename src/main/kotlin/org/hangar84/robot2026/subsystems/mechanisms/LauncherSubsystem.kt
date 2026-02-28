@@ -10,7 +10,7 @@ import edu.wpi.first.wpilibj2.command.Commands
 import edu.wpi.first.wpilibj2.command.SubsystemBase
 import edu.wpi.first.wpilibj2.command.button.Trigger
 import org.hangar84.robot2026.io.interfaces.mechanismio.LauncherIO
-import org.hangar84.robot2026.telemetry.TelemetryRouter
+import org.hangar84.robot2026.telemetry.TelemetryRouter.Launcher
 
 class LauncherSubsystem(val io: LauncherIO) : SubsystemBase() {
 
@@ -27,7 +27,7 @@ class LauncherSubsystem(val io: LauncherIO) : SubsystemBase() {
     )
     init {
         launch_State = false
-        Trigger {  TelemetryRouter.Launcher.launcherSwitch(launch_Switch) }
+        Trigger {  Launcher.launcherSwitch(launch_Switch) }
             .whileTrue(LAUNCH_COMMAND)
     }
 
@@ -63,7 +63,7 @@ class LauncherSubsystem(val io: LauncherIO) : SubsystemBase() {
             SmartDashboard.putData("Mechanism 2D/Launcher Visualizer", mech)
         }
 
-        TelemetryRouter.Launcher.launcher(
+       Launcher.launcher(
             inputs.leftAppliedOutput,
             inputs.rightAppliedOutput,
             inputs.leftCurrentAmps,
@@ -71,8 +71,8 @@ class LauncherSubsystem(val io: LauncherIO) : SubsystemBase() {
             inputs.leftTempCelsius,
             inputs.rightTempCelsius,
             launch_State,
-            TelemetryRouter.Launcher.launcherSwitch(launch_Switch),
-            TelemetryRouter.Launcher.getLauncherSpeed()
+            Launcher.launcherSwitch(launch_Switch),
+            Launcher.getLauncherSpeed()
         )
     }
 }

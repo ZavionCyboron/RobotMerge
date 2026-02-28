@@ -9,7 +9,6 @@ import edu.wpi.first.wpilibj2.command.Commands
 import edu.wpi.first.wpilibj2.command.SubsystemBase
 import edu.wpi.first.wpilibj2.command.button.Trigger
 import org.hangar84.robot2026.io.interfaces.mechanismio.IntakeIO
-import org.hangar84.robot2026.telemetry.TelemetryRouter
 import org.hangar84.robot2026.telemetry.TelemetryRouter.Intake
 
 class IntakeSubsystem(val io: IntakeIO) : SubsystemBase() {
@@ -62,7 +61,7 @@ class IntakeSubsystem(val io: IntakeIO) : SubsystemBase() {
             inputs.rightCurrentAmps,
             inputs.leftTempCelcius,
             inputs.rightTempCelcius,
-            TelemetryRouter.Intake.getIntakeSpeed()
+            Intake.getIntakeSpeed()
         )
     }
 }
