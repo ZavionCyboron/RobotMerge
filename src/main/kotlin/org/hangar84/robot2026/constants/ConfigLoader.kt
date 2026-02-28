@@ -73,7 +73,17 @@ data class Swerve(
     val rearLeftTurningId: Int,
 
     val rearRightDrivingId: Int,
-    val rearRightTurningId: Int
+    val rearRightTurningId: Int,
+
+    val frontLeftChassisOffsetDeg: Double = 270.0,
+    val frontRightChassisOffsetDeg: Double = 0.0,
+    val rearLeftChassisOffsetDeg: Double = 90.0,
+    val rearRightChassisOffsetDeg: Double = 180.0,
+    val rearRightTurningEncoderInverted: Boolean = false,
+    val rearRightDriveInverted: Boolean = false,
+    val frontRightDriveInverted: Boolean = false,
+    val frontLeftDriveInverted: Boolean = false,
+    val rearLeftDriveInverted: Boolean = false
 )
 
 object ConfigLoader {
@@ -105,6 +115,29 @@ object ConfigLoader {
             else -> error("Key '$key' is not a number: value=$v type=${v::class}")
         }
     }
+
+
+    private fun JSONObject.optDouble(key: String): Double? {
+        val v = this[key] ?: return null
+        return when (v) {
+            is Long -> v.toDouble()
+            is Int -> v.toDouble()
+            is Double -> v
+            is Number -> v.toDouble()
+            else -> error("Key '$key' is not a number: value=$v type=${v::class}")
+        }
+    }
+
+    private fun JSONObject.optBool(key: String): Boolean? {
+        val v = this[key] ?: return null
+        return when (v) {
+            is Boolean -> v
+            is String -> v.toBooleanStrictOrNull()
+                ?: error("Key '$key' is not a valid boolean string: $v")
+            else -> error("Key '$key' is not a boolean: value=$v type=${v::class}")
+        }
+    }
+
 
     private fun JSONObject.bool(key: String): Boolean {
         val v = this[key] ?: error("Missing key '$key' in object keys=${this.keys}")
@@ -188,6 +221,15 @@ object ConfigLoader {
                     rearLeftTurningId = r.int("rearLeftTurningId"),
                     rearRightDrivingId = r.int("rearRightDrivingId"),
                     rearRightTurningId = r.int("rearRightTurningId"),
+                    frontLeftChassisOffsetDeg = r.optDouble("frontLeftChassisOffsetDeg") ?: 270.0,
+                    frontRightChassisOffsetDeg = r.optDouble("frontRightChassisOffsetDeg") ?: 0.0,
+                    rearLeftChassisOffsetDeg = r.optDouble("rearLeftChassisOffsetDeg") ?: 180.0,
+                    rearRightChassisOffsetDeg = r.optDouble("rearRightChassisOffsetDeg") ?: 90.0,
+                    rearRightTurningEncoderInverted = r.optBool("rearRightTurningEncoderInverted") ?: true,
+                    rearRightDriveInverted = r.optBool("rearRightDriveInverted") ?: true,
+                    frontRightDriveInverted = r.optBool("frontRightDriveInverted") ?: true,
+                    rearLeftDriveInverted = r.optBool("rearLeftDriveInverted") ?: true,
+                    frontLeftDriveInverted = r.optBool("frontLeftDriveInverted") ?: true,
                 )
             )
 
