@@ -12,7 +12,7 @@ abstract class Drivetrain : SubsystemBase() {
     abstract val maxLinearSpeedMps: Double
     abstract val maxAngularSpeedRadPerSec: Double
 
-    abstract fun drive(xSpeed: Double, ySpeed: Double, rot: Double, fieldRelative: Boolean)
+    abstract fun drive(xThrottle: Double, yThrottle: Double, rot: Double, fieldRelative: Boolean)
     abstract fun buildAutoChooser(): SendableChooser<Command>
     abstract fun getChassisSpeeds(): ChassisSpeeds
 
