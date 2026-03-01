@@ -1,14 +1,13 @@
 package org.hangar84.robot2026.io.real.drivebaserealio
 
-import com.revrobotics.spark.config.SparkMaxConfig
 import edu.wpi.first.math.kinematics.SwerveModuleState
 import edu.wpi.first.units.Units.Degrees
 import org.hangar84.robot2026.constants.MaxConfig
 import org.hangar84.robot2026.constants.Swerve
 import org.hangar84.robot2026.io.interfaces.drivebaseio.SwerveIO
-import org.hangar84.robot2026.subsystems.drivebases.swerve.`swerve-configs`.MAXSwerveModule
-import org.hangar84.robot2026.subsystems.drivebases.swerve.`swerve-configs`.SwerveConfigs.drivingConfig
-import org.hangar84.robot2026.subsystems.drivebases.swerve.`swerve-configs`.SwerveConfigs.turningConfig
+import org.hangar84.robot2026.subsystems.drivebases.swerve.configs.MAXSwerveModule
+import org.hangar84.robot2026.subsystems.drivebases.swerve.configs.SwerveConfigs.drivingConfig
+import org.hangar84.robot2026.subsystems.drivebases.swerve.configs.SwerveConfigs.turningConfig
 
 class MaxSwerveIO(cfg: Swerve, maxcfg: MaxConfig) : SwerveIO {
 
