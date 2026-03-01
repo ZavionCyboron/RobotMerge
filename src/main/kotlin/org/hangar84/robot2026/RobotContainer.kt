@@ -5,7 +5,6 @@ import com.pathplanner.lib.auto.NamedCommands
 import edu.wpi.first.math.MathUtil
 import edu.wpi.first.math.filter.SlewRateLimiter
 import edu.wpi.first.math.geometry.Rotation2d
-import edu.wpi.first.networktables.NetworkTableInstance
 import edu.wpi.first.wpilibj.*
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard
@@ -18,10 +17,8 @@ import org.hangar84.robot2026.constants.ConfigLoader
 import org.hangar84.robot2026.constants.RobotType
 import org.hangar84.robot2026.io.interfaces.drivebaseio.GyroIO
 import org.hangar84.robot2026.io.interfaces.drivebaseio.MecanumIO
-import org.hangar84.robot2026.io.interfaces.drivebaseio.SwerveIO
 import org.hangar84.robot2026.io.interfaces.mechanismio.PneumaticsIO
 import org.hangar84.robot2026.io.real.drivebaserealio.AdisGyroIO
-import org.hangar84.robot2026.io.real.drivebaserealio.MaxSwerveIO
 import org.hangar84.robot2026.io.real.drivebaserealio.RevMecanumIO
 import org.hangar84.robot2026.io.real.ledrealio.LedIOLumynUsb
 import org.hangar84.robot2026.io.real.mechanismrealio.RevHingeIO
@@ -30,7 +27,6 @@ import org.hangar84.robot2026.io.real.mechanismrealio.RevLauncherIO
 import org.hangar84.robot2026.io.real.mechanismrealio.RevPneumaticsIO
 import org.hangar84.robot2026.io.sim.simdrivebaseio.SimGyroIO
 import org.hangar84.robot2026.io.sim.simdrivebaseio.SimMecanumIO
-import org.hangar84.robot2026.io.sim.simdrivebaseio.SimSwerveIO
 import org.hangar84.robot2026.io.sim.simmechanismio.SimHingeIO
 import org.hangar84.robot2026.io.sim.simmechanismio.SimIntakeIO
 import org.hangar84.robot2026.io.sim.simmechanismio.SimLauncherIO
@@ -111,12 +107,12 @@ object RobotContainer {
             val gyro: GyroIO = if (isSim) SimGyroIO() else AdisGyroIO().apply {
                 setYawAdjustmentDegrees(90.0)
             }
-            val swerve: SwerveIO = if (isSim) SimSwerveIO() else MaxSwerveIO(robotCfg.swerve!!, sharedCfg.max_config)
+            // val swerve: SwerveIO = if (isSim) SimSwerveIO() else MaxSwerveIO(robotCfg.swerve!!, sharedCfg.max_config)
             SmartDashboard.putNumber("Front Left Offsets", robotCfg.swerve!!.frontLeftChassisOffsetDeg)
             SmartDashboard.putNumber("Front Right Offsets", robotCfg.swerve.frontRightChassisOffsetDeg)
             SmartDashboard.putNumber("Rear Left Offsets", robotCfg.swerve.rearLeftChassisOffsetDeg)
             SmartDashboard.putNumber("Rear Right Offsets", robotCfg.swerve.rearRightChassisOffsetDeg)
-            SwerveDriveSubsystem(swerve, gyro, leds)
+            SwerveDriveSubsystem(gyro, leds)
         }
 
         RobotType.MECANUM -> {
@@ -194,28 +190,15 @@ object RobotContainer {
             return (db * db).withSign(db) // square for finer control near center
         }
 
-        if (robotType == RobotType.MECANUM) {
-            drivetrain.defaultCommand =  driveCommand(
-                drivetrain,
-                { xLimiter.calculate(shapedAxis(-controller.leftY)) },
-                { yLimiter.calculate(shapedAxis(-controller.leftX)) },
-                { rotLimiter.calculate(shapedAxis(-controller.rightX)) },
-                { false }
-            )
-        } else if (robotType == RobotType.SWERVE){
-            val maxV = drivetrain.maxLinearSpeedMps
-            val maxW = drivetrain.maxAngularSpeedRadPerSec
-            drivetrain.defaultCommand =
-                driveCommand(
-                drivetrain,
-                { -shapedAxis(controller.leftY) * maxV},
-                { -shapedAxis(controller.leftX) * maxV },
-                { -shapedAxis(controller.rightX) * maxW},
-                { false }
-            )
-            (drivetrain as? SwerveDriveSubsystem)?.let { swerve ->
-                controller.y().whileTrue(swerve.PARK_COMMAND)
-            }
+        drivetrain.defaultCommand = drivetrain.run { drivetrain.drive(
+            shapedAxis(-controller.leftY),
+            shapedAxis(-controller.leftX),
+            shapedAxis(-controller.rightX),
+            false
+        )}
+
+        if (drivetrain is SwerveDriveSubsystem) {
+            controller.y().whileTrue(drivetrain.PARK_COMMAND)
         }
 
 
