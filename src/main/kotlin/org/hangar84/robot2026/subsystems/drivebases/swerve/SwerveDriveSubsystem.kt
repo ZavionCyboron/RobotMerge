@@ -10,20 +10,11 @@ import edu.wpi.first.hal.FRCNetComm
 import edu.wpi.first.hal.HAL
 import edu.wpi.first.math.VecBuilder
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator
-import edu.wpi.first.math.geometry.Pose2d
-import edu.wpi.first.math.geometry.Rotation2d
-import edu.wpi.first.math.geometry.Rotation3d
-import edu.wpi.first.math.geometry.Transform3d
-import edu.wpi.first.math.geometry.Translation2d
-import edu.wpi.first.math.geometry.Translation3d
-import edu.wpi.first.math.kinematics.ChassisSpeeds
-import edu.wpi.first.math.kinematics.SwerveDriveKinematics
-import edu.wpi.first.math.kinematics.SwerveDriveOdometry
-import edu.wpi.first.math.kinematics.SwerveModulePosition
-import edu.wpi.first.math.kinematics.SwerveModuleState
-import edu.wpi.first.networktables.NetworkTable
+import edu.wpi.first.math.geometry.*
+import edu.wpi.first.math.kinematics.*
 import edu.wpi.first.networktables.NetworkTableInstance
 import edu.wpi.first.units.Units
+import edu.wpi.first.units.Units.Degrees
 import edu.wpi.first.wpilibj.DriverStation
 import edu.wpi.first.wpilibj.RobotBase
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser
@@ -31,11 +22,11 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard
 import edu.wpi.first.wpilibj2.command.Command
 import edu.wpi.first.wpilibj2.command.Commands
 import org.hangar84.robot2026.RobotContainer
-import org.hangar84.robot2026.constants.ConfigLoader
-import org.hangar84.robot2026.constants.RobotType
 import org.hangar84.robot2026.io.interfaces.drivebaseio.GyroIO
 import org.hangar84.robot2026.io.interfaces.drivebaseio.SwerveIO
 import org.hangar84.robot2026.subsystems.drivebases.Drivetrain
+import org.hangar84.robot2026.subsystems.drivebases.swerve.configs.MAXSwerveModule
+import org.hangar84.robot2026.subsystems.drivebases.swerve.configs.SwerveConfigs
 import org.hangar84.robot2026.subsystems.leds.LedSubsystem
 import org.hangar84.robot2026.telemetry.TelemetryRouter
 import org.photonvision.EstimatedRobotPose
@@ -46,28 +37,46 @@ import kotlin.jvm.optionals.getOrNull
 import kotlin.math.abs
 
 class SwerveDriveSubsystem(
-
-    private val swerveIO: SwerveIO,
     private val gyroIO: GyroIO,
     private val leds: LedSubsystem
-): Drivetrain() {
+) : Drivetrain() {
     companion object {
         internal val MAX_SPEED = Units.MetersPerSecond.of(4.8)
         internal val MAX_ANGULAR_SPEED = Units.RotationsPerSecond.of(1.0)
     }
 
+    // - Swerve Modules -
+
+    private val frontRightModule =
+        MAXSwerveModule(1, 2, Degrees.of(0.0), SwerveConfigs.drivingConfig, SwerveConfigs.turningConfig)
+    private val frontLeftModule =
+        MAXSwerveModule(3, 4, Degrees.of(270.0), SwerveConfigs.drivingConfig, SwerveConfigs.turningConfig)
+    private val rearRightModule =
+        MAXSwerveModule(5, 6, Degrees.of(90.0), SwerveConfigs.drivingConfig, SwerveConfigs.turningConfig)
+    private val rearLeftModule =
+        MAXSwerveModule(7, 8, Degrees.of(180.0), SwerveConfigs.drivingConfig, SwerveConfigs.turningConfig)
+
+    private val allModules
+        get() = arrayOf(frontLeftModule, frontRightModule, rearLeftModule, rearRightModule)
+    private val allModulePositions: Array<SwerveModulePosition>
+        get() = allModules.map { it.position }.toTypedArray()
+    private val allModuleStates: Array<SwerveModuleState>
+        get() = allModules.map { it.state }.toTypedArray()
+
+
     private val isSim = RobotBase.isSimulation()
     private val gyroInputs = GyroIO.Inputs()
+
     private val swerveInputs = SwerveIO.Inputs()
 
     private val anyDriveModuleFaulted =
         swerveInputs.fl.driveFaulted ||
-        swerveInputs.fr.driveFaulted ||
-        swerveInputs.rl.driveFaulted ||
-        swerveInputs.rr.driveFaulted
+                swerveInputs.fr.driveFaulted ||
+                swerveInputs.rl.driveFaulted ||
+                swerveInputs.rr.driveFaulted
 
     private val anyTurnModuleFaulted =
-                swerveInputs.fl.turnFaulted ||
+        swerveInputs.fl.turnFaulted ||
                 swerveInputs.fr.turnFaulted ||
                 swerveInputs.rl.turnFaulted ||
                 swerveInputs.rr.turnFaulted
@@ -117,12 +126,13 @@ class SwerveDriveSubsystem(
         return camera.allUnreadResults
             .mapNotNull { result -> photonEstimator.estimateLowestAmbiguityPose(result).orElse(null) }
     }
+
     private var commandedSpeeds = ChassisSpeeds()
 
     fun driveRobotCentric(speeds: ChassisSpeeds) {
-        val states = kinematics.toSwerveModuleStates(speeds)
-        SwerveDriveKinematics.desaturateWheelSpeeds(states, maxLinearSpeedMps)
-        swerveIO.setModuleStates(states[0], states[1], states[2], states[3])
+        val swerveStates = kinematics.toSwerveModuleStates(speeds)
+        SwerveDriveKinematics.desaturateWheelSpeeds(swerveStates, maxLinearSpeedMps)
+        allModules.forEachIndexed { i, module -> module.desiredState = swerveStates[i] }
     }
 
     fun getLatestVisionResult(): PhotonPipelineResult? {
@@ -180,13 +190,13 @@ class SwerveDriveSubsystem(
     }
 
     internal val PARK_COMMAND: Command = Commands.run({
-        val states = arrayOf(
+        val swerveStates = arrayOf(
             SwerveModuleState(0.0, Rotation2d.fromDegrees(45.0)),
             SwerveModuleState(0.0, Rotation2d.fromDegrees(-45.0)),
             SwerveModuleState(0.0, Rotation2d.fromDegrees(-45.0)),
             SwerveModuleState(0.0, Rotation2d.fromDegrees(45.0)),
         )
-        swerveIO.setModuleStates(states[0], states[1], states[2], states[3])
+        allModules.forEachIndexed { i, module -> module.desiredState = swerveStates[i] }
     }, this)
 
     private val DRIVE_FORWARD_COMMAND: Command = Commands.run(
@@ -230,7 +240,7 @@ class SwerveDriveSubsystem(
         TelemetryRouter.setBase(if (isSim) "${RobotContainer.robotType.name}/Sim" else RobotContainer.robotType.name)
 
         gyroIO.updateInputs(gyroInputs)
-        swerveIO.updateInputs(swerveInputs)
+        // swerveIO.updateInputs(swerveInputs)  TODO
 
         val positions = modulePositionsFromInputs()
         odometry.update(getHeading(), positions)
@@ -319,28 +329,34 @@ class SwerveDriveSubsystem(
         )
     }
 
-    override fun drive(xSpeed: Double, ySpeed: Double, rot: Double, fieldRelative: Boolean) {
+    override fun drive(xThrottle: Double, yThrottle: Double, rot: Double, fieldRelative: Boolean) {
+        val xSpeed = MAX_SPEED * xThrottle
+        val ySpeed = MAX_SPEED * yThrottle
+        val rotSpeed = MAX_ANGULAR_SPEED * rot
+
         commandedSpeeds = if (fieldRelative) {
-            ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, rot, getHeading())
+            ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, rotSpeed, getHeading())
         } else {
-            ChassisSpeeds(xSpeed, ySpeed, rot)
+            ChassisSpeeds(xSpeed, ySpeed, rotSpeed)
         }
         if (isSim) gyroIO.setSimOmegaRadPerSec(commandedSpeeds.omegaRadiansPerSecond)
 
-        val states = kinematics.toSwerveModuleStates(commandedSpeeds)
-        SwerveDriveKinematics.desaturateWheelSpeeds(states, maxLinearSpeedMps)
-        swerveIO.setModuleStates(states[0], states[1], states[2], states[3])
+        val swerveStates = kinematics.toSwerveModuleStates(commandedSpeeds)
+        SwerveDriveKinematics.desaturateWheelSpeeds(swerveStates, maxLinearSpeedMps)
+        allModules.forEachIndexed { i, module -> module.desiredState = swerveStates[i] }
     }
 
     fun driveRelative(chassisSpeeds: ChassisSpeeds) {
         commandedSpeeds = chassisSpeeds
-        val states = kinematics.toSwerveModuleStates(chassisSpeeds)
-        SwerveDriveKinematics.desaturateWheelSpeeds(states, maxLinearSpeedMps)
-        swerveIO.setModuleStates(states[0], states[1], states[2], states[3])
+        val swerveStates = kinematics.toSwerveModuleStates(chassisSpeeds)
+        SwerveDriveKinematics.desaturateWheelSpeeds(swerveStates, maxLinearSpeedMps)
+        allModules.forEachIndexed { i, module -> module.desiredState = swerveStates[i] }
     }
 
     override fun buildAutoChooser(): SendableChooser<Command> {
-        val robotConfig = try { RobotConfig.fromGUISettings() } catch (_: Exception) {
+        val robotConfig = try {
+            RobotConfig.fromGUISettings()
+        } catch (_: Exception) {
             return SendableChooser<Command>().apply { setDefaultOption("Drive Forward", DRIVE_FORWARD_COMMAND) }
         }
 
@@ -361,7 +377,7 @@ class SwerveDriveSubsystem(
 
     override fun simulationPeriodic(dtSeconds: Double) {
         if (!isSim) return
-        swerveIO.simulationPeriodic(dtSeconds)
+        // swerveIO.simulationPeriodic(dtSeconds)  TODO
         gyroIO.simulationPeriodic(dtSeconds)
     }
 }
