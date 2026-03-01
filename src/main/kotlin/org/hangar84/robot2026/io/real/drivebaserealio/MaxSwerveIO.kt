@@ -1,55 +1,46 @@
 package org.hangar84.robot2026.io.real.drivebaserealio
 
-import com.revrobotics.spark.config.SparkMaxConfig
 import edu.wpi.first.math.kinematics.SwerveModuleState
 import edu.wpi.first.units.Units.Degrees
 import org.hangar84.robot2026.constants.MaxConfig
 import org.hangar84.robot2026.constants.Swerve
 import org.hangar84.robot2026.io.interfaces.drivebaseio.SwerveIO
-import org.hangar84.robot2026.subsystems.drivebases.swerve.`swerve-configs`.MAXSwerveModule
-import org.hangar84.robot2026.subsystems.drivebases.swerve.`swerve-configs`.SwerveConfigs.drivingConfig
-import org.hangar84.robot2026.subsystems.drivebases.swerve.`swerve-configs`.SwerveConfigs.turningConfig
+import org.hangar84.robot2026.subsystems.drivebases.swerve.configs.MAXSwerveModule
+import org.hangar84.robot2026.subsystems.drivebases.swerve.configs.SwerveConfigs.drivingConfig
+import org.hangar84.robot2026.subsystems.drivebases.swerve.configs.SwerveConfigs.turningConfig
 
-class MaxSwerveIO(cfg: Swerve?, maxcfg: MaxConfig) : SwerveIO {
+class MaxSwerveIO(cfg: Swerve, maxcfg: MaxConfig) : SwerveIO {
 
     private val currentLimit = maxcfg.currentLimit + 10
-    private val invertedTrue = maxcfg.inverted
 
-    private val rrDrivingConfig = SparkMaxConfig().apply {
-        apply(drivingConfig)
-        inverted(invertedTrue) // true
-        smartCurrentLimit(currentLimit) // 40 amps
-    }
 
     private val fl: MAXSwerveModule = MAXSwerveModule(
-        cfg!!.frontLeftDrivingId,
+        cfg.frontLeftDrivingId,
         cfg.frontLeftTurningId,
         Degrees.of(270.0),
         drivingConfig,
         turningConfig
     )
-
     private val fr: MAXSwerveModule = MAXSwerveModule(
-        cfg!!.frontRightDrivingId,
+        cfg.frontRightDrivingId,
         cfg.frontRightTurningId,
         Degrees.of(0.0),
         drivingConfig,
         turningConfig
     )
-
     private val rl: MAXSwerveModule = MAXSwerveModule(
-        cfg!!.rearLeftDrivingId,
+        cfg.rearLeftDrivingId,
         cfg.rearLeftTurningId,
-        Degrees.of(180.0),
+        Degrees.of(90.0),
         drivingConfig,
         turningConfig
     )
 
     private val rr: MAXSwerveModule = MAXSwerveModule(
-        cfg!!.rearRightDrivingId,
+        cfg.rearRightDrivingId,
         cfg.rearRightTurningId,
-        Degrees.of(90.0),
-        rrDrivingConfig,
+        Degrees.of(180.0),
+        drivingConfig,
         turningConfig
     )
 

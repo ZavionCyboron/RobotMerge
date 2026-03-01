@@ -8,7 +8,9 @@ import java.nio.file.Path
 
 
 data class Hinge(
-    val hingeMotorId: Int
+    val hingeMotorId: Int,
+    val maxLimitSwitchOneDio: Int? = null,
+    val maxLimitSwitchTwoDio: Int? = null
 )
 
 data class Pneumatics(
@@ -54,11 +56,11 @@ data class perRobotConfig(
     val mecanum: Mecanum? = null
 )
 
-data class RootConfig(
+/*data class RootConfig(
     val shared: SharedConfig,
     val swerve: perRobotConfig,
     val mecanum: perRobotConfig
-)
+)*/
 
 data class Swerve(
     val frontLeftDrivingId: Int,
@@ -71,7 +73,17 @@ data class Swerve(
     val rearLeftTurningId: Int,
 
     val rearRightDrivingId: Int,
-    val rearRightTurningId: Int
+    val rearRightTurningId: Int,
+
+    val frontLeftChassisOffsetDeg: Double = 270.0,
+    val frontRightChassisOffsetDeg: Double = 0.0,
+    val rearLeftChassisOffsetDeg: Double = 90.0,
+    val rearRightChassisOffsetDeg: Double = 180.0,
+    val rearRightTurningEncoderInverted: Boolean = false,
+    val rearRightDriveInverted: Boolean = false,
+    val frontRightDriveInverted: Boolean = false,
+    val frontLeftDriveInverted: Boolean = false,
+    val rearLeftDriveInverted: Boolean = false
 )
 
 object ConfigLoader {
@@ -92,6 +104,40 @@ object ConfigLoader {
             else -> error("Key '$key' is not a number: value=$v type=${v::class}")
         }
     }
+
+    private fun JSONObject.optInt(key: String): Int? {
+        val v = this[key] ?: return null
+        return when (v) {
+            is Long -> v.toInt()
+            is Int -> v
+            is Double -> v.toInt()
+            is Number -> v.toInt()
+            else -> error("Key '$key' is not a number: value=$v type=${v::class}")
+        }
+    }
+
+
+    private fun JSONObject.optDouble(key: String): Double? {
+        val v = this[key] ?: return null
+        return when (v) {
+            is Long -> v.toDouble()
+            is Int -> v.toDouble()
+            is Double -> v
+            is Number -> v.toDouble()
+            else -> error("Key '$key' is not a number: value=$v type=${v::class}")
+        }
+    }
+
+    private fun JSONObject.optBool(key: String): Boolean? {
+        val v = this[key] ?: return null
+        return when (v) {
+            is Boolean -> v
+            is String -> v.toBooleanStrictOrNull()
+                ?: error("Key '$key' is not a valid boolean string: $v")
+            else -> error("Key '$key' is not a boolean: value=$v type=${v::class}")
+        }
+    }
+
 
     private fun JSONObject.bool(key: String): Boolean {
         val v = this[key] ?: error("Missing key '$key' in object keys=${this.keys}")
@@ -114,7 +160,12 @@ object ConfigLoader {
             RobotType.SWERVE -> "swerve"
             RobotType.MECANUM -> "mecanum"
         }
-        return root[key] as JSONObject
+
+        val driveRoot = root["robotType"]as? JSONObject
+            ?: error("Missing 'robotType' object at root. keys=${root.keys}")
+
+        return driveRoot[key] as? JSONObject
+            ?: error("Missing drive section '$key' inside 'robotType'. keys=${driveRoot.keys}")
     }
 
     fun sharedJson(): JSONObject = root["shared"] as JSONObject
@@ -129,7 +180,11 @@ object ConfigLoader {
         val maxcfgJ = s["max_config"] as JSONObject
 
         return SharedConfig(
-            hinge = Hinge(hingeMotorId = hingeJ.int("hingeMotorId")),
+            hinge = Hinge(
+                hingeMotorId = hingeJ.int("hingeMotorId"),
+                maxLimitSwitchOneDio = hingeJ.optInt("maxLimitSwitchOneDio"),
+                maxLimitSwitchTwoDio = hingeJ.optInt("maxLimitSwitchTwoDio")
+            ),
             intake = Intake(
                 leftIntakeMotorID = intakeJ.int("leftIntakeMotorId"),
                 rightIntakeMotorID = intakeJ.int("rightIntakeMotorId")
@@ -155,28 +210,37 @@ object ConfigLoader {
     fun loadPerRobot(robotType: RobotType): perRobotConfig {
         val r = sectionFor(robotType)
 
-        val swerve: Swerve? = (r["swerve"] as JSONObject?)?.let { j ->
-            Swerve(
-                frontLeftDrivingId = j.int("frontLeftDrivingId"),
-                frontLeftTurningId = j.int("frontLeftTurningId"),
-                frontRightDrivingId = j.int("frontRightDrivingId"),
-                frontRightTurningId = j.int("frontRightTurningId"),
-                rearLeftDrivingId = j.int("rearLeftDrivingId"),
-                rearLeftTurningId = j.int("rearLeftTurningId"),
-                rearRightDrivingId = j.int("rearRightDrivingId"),
-                rearRightTurningId = j.int("rearRightTurningId")
+        return when (robotType) {
+            RobotType.SWERVE -> perRobotConfig(
+                swerve = Swerve(
+                    frontLeftDrivingId = r.int("frontLeftDrivingId"),
+                    frontLeftTurningId = r.int("frontLeftTurningId"),
+                    frontRightDrivingId = r.int("frontRightDrivingId"),
+                    frontRightTurningId = r.int("frontRightTurningId"),
+                    rearLeftDrivingId = r.int("rearLeftDrivingId"),
+                    rearLeftTurningId = r.int("rearLeftTurningId"),
+                    rearRightDrivingId = r.int("rearRightDrivingId"),
+                    rearRightTurningId = r.int("rearRightTurningId"),
+                    frontLeftChassisOffsetDeg = r.optDouble("frontLeftChassisOffsetDeg") ?: 270.0,
+                    frontRightChassisOffsetDeg = r.optDouble("frontRightChassisOffsetDeg") ?: 0.0,
+                    rearLeftChassisOffsetDeg = r.optDouble("rearLeftChassisOffsetDeg") ?: 180.0,
+                    rearRightChassisOffsetDeg = r.optDouble("rearRightChassisOffsetDeg") ?: 90.0,
+                    rearRightTurningEncoderInverted = r.optBool("rearRightTurningEncoderInverted") ?: true,
+                    rearRightDriveInverted = r.optBool("rearRightDriveInverted") ?: true,
+                    frontRightDriveInverted = r.optBool("frontRightDriveInverted") ?: true,
+                    rearLeftDriveInverted = r.optBool("rearLeftDriveInverted") ?: true,
+                    frontLeftDriveInverted = r.optBool("frontLeftDriveInverted") ?: true,
+                )
+            )
+
+            RobotType.MECANUM -> perRobotConfig(
+                mecanum = Mecanum(
+                    frontLeftId = r.int("frontLeftId"),
+                    frontRightId = r.int("frontRightId"),
+                    rearLeftId = r.int("rearLeftId"),
+                    rearRightId = r.int("rearRightId"),
+                )
             )
         }
-
-        val mecanum: Mecanum? = (r["mecanum"] as JSONObject?)?.let { j ->
-            Mecanum(
-                frontLeftId = j.int("frontLeftId"),
-                frontRightId = j.int("frontRightId"),
-                rearLeftId = j.int("rearLeftId"),
-                rearRightId = j.int("rearRightId")
-            )
-        }
-
-        return perRobotConfig(swerve = swerve, mecanum = mecanum)
     }
 }

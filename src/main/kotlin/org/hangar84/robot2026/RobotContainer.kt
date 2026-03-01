@@ -16,12 +16,9 @@ import org.hangar84.robot2026.commands.driveCommand
 import org.hangar84.robot2026.constants.ConfigLoader
 import org.hangar84.robot2026.constants.RobotType
 import org.hangar84.robot2026.io.interfaces.drivebaseio.GyroIO
-import org.hangar84.robot2026.io.interfaces.ledio.LedIO
 import org.hangar84.robot2026.io.interfaces.drivebaseio.MecanumIO
 import org.hangar84.robot2026.io.interfaces.mechanismio.PneumaticsIO
-import org.hangar84.robot2026.io.interfaces.drivebaseio.SwerveIO
 import org.hangar84.robot2026.io.real.drivebaserealio.AdisGyroIO
-import org.hangar84.robot2026.io.real.drivebaserealio.MaxSwerveIO
 import org.hangar84.robot2026.io.real.drivebaserealio.RevMecanumIO
 import org.hangar84.robot2026.io.real.ledrealio.LedIOLumynUsb
 import org.hangar84.robot2026.io.real.mechanismrealio.RevHingeIO
@@ -30,7 +27,6 @@ import org.hangar84.robot2026.io.real.mechanismrealio.RevLauncherIO
 import org.hangar84.robot2026.io.real.mechanismrealio.RevPneumaticsIO
 import org.hangar84.robot2026.io.sim.simdrivebaseio.SimGyroIO
 import org.hangar84.robot2026.io.sim.simdrivebaseio.SimMecanumIO
-import org.hangar84.robot2026.io.sim.simdrivebaseio.SimSwerveIO
 import org.hangar84.robot2026.io.sim.simmechanismio.SimHingeIO
 import org.hangar84.robot2026.io.sim.simmechanismio.SimIntakeIO
 import org.hangar84.robot2026.io.sim.simmechanismio.SimLauncherIO
@@ -43,11 +39,14 @@ import org.hangar84.robot2026.sim.SimHooks
 import org.hangar84.robot2026.sim.SimSensors
 import org.hangar84.robot2026.sim.SimState
 import org.hangar84.robot2026.sim.SimState.isSim
-import org.hangar84.robot2026.subsystems.drivebases.*
+import org.hangar84.robot2026.subsystems.drivebases.Drivetrain
 import org.hangar84.robot2026.subsystems.drivebases.mecanum.MecanumDriveSubsystem
 import org.hangar84.robot2026.subsystems.drivebases.swerve.SwerveDriveSubsystem
 import org.hangar84.robot2026.subsystems.leds.LedSubsystem
-import org.hangar84.robot2026.subsystems.mechanisms.*
+import org.hangar84.robot2026.subsystems.mechanisms.HingeSubsystem
+import org.hangar84.robot2026.subsystems.mechanisms.IntakeSubsystem
+import org.hangar84.robot2026.subsystems.mechanisms.LauncherSubsystem
+import org.hangar84.robot2026.subsystems.mechanisms.PneumaticsSubsystem
 import org.hangar84.robot2026.telemetry.TelemetryRouter
 import kotlin.math.hypot
 import kotlin.math.withSign
@@ -91,56 +90,49 @@ object RobotContainer {
         else RevPneumaticsIO(
             sharedCfg.pneumatics
         )
-
-    val ledIO: LedIO =
-        LedIOLumynUsb(USBPort.kUSB1, "base")
-
-    val leds = LedSubsystem(ledIO).apply { connect() }
-
     val pneumatics = PneumaticsSubsystem(pneumaticsIO)
 
-    private fun registerPathplannerEvents() {
-        NamedCommands.registerCommand(
-            "OctupleLaunch",
-            Commands.sequence(
-                launcher.pulseCommand(.25),
-                Commands.waitSeconds(.4), // Launch 1st ball.
-                launcher.pulseCommand(.25),
-                Commands.waitSeconds(.4), // Launch 2nd ball.
-                launcher.pulseCommand(.25),
-                Commands.waitSeconds(.4), // Launch 3rd ball.
-                launcher.pulseCommand(.25),
-                Commands.waitSeconds(.4), // Launch 4th ball.
-                launcher.pulseCommand(.25),
-                Commands.waitSeconds(.4), // Launch 5th ball.
-                launcher.pulseCommand(.25),
-                Commands.waitSeconds(.4), // Launch 6th ball.
-                launcher.pulseCommand(.25),
-                Commands.waitSeconds(.4), // Launch 7th ball.
-                launcher.pulseCommand(.25),
-                Commands.waitSeconds(.4), // Launch 8th ball.
-                launcher.pulseCommand(.25),
-                )
-        )
-        NamedCommands.registerCommand("Intake",Intake.INTAKE_COMMAND.withTimeout(2.0))
-        NamedCommands.registerCommand("Lift", pneumatics.extendBothCommand())
-        NamedCommands.registerCommand("Retract", pneumatics.retractBothCommand())
-    }
+    val leds = LedSubsystem(
+        LedIOLumynUsb(
+            USBPort.kUSB1,
+            "base",
+            "intake",
+            "launcher",
+            "all"
+        ), // Your ConnectorX             // Your Zia symbol on PWM 0
+    )
     // The robot's subsystems
     val drivetrain: Drivetrain = when (robotType) {
         RobotType.SWERVE -> {
             val gyro: GyroIO = if (isSim) SimGyroIO() else AdisGyroIO().apply {
                 setYawAdjustmentDegrees(90.0)
             }
-            val swerve: SwerveIO = if (isSim) SimSwerveIO() else MaxSwerveIO(robotCfg.swerve, sharedCfg.max_config)
-            SwerveDriveSubsystem(swerve, gyro, leds)
+            // val swerve: SwerveIO = if (isSim) SimSwerveIO() else MaxSwerveIO(robotCfg.swerve!!, sharedCfg.max_config)
+            SmartDashboard.putNumber("Front Left Offsets", robotCfg.swerve!!.frontLeftChassisOffsetDeg)
+            SmartDashboard.putNumber("Front Right Offsets", robotCfg.swerve.frontRightChassisOffsetDeg)
+            SmartDashboard.putNumber("Rear Left Offsets", robotCfg.swerve.rearLeftChassisOffsetDeg)
+            SmartDashboard.putNumber("Rear Right Offsets", robotCfg.swerve.rearRightChassisOffsetDeg)
+            SwerveDriveSubsystem(gyro, leds)
         }
 
         RobotType.MECANUM -> {
             val gyro: GyroIO = if (isSim) SimGyroIO() else AdisGyroIO()
-            val mecanum: MecanumIO = if (isSim) SimMecanumIO() else RevMecanumIO(robotCfg.mecanum, sharedCfg.max_config)
+            val mecanum: MecanumIO = if (isSim) SimMecanumIO() else RevMecanumIO(robotCfg.mecanum!!, sharedCfg.max_config)
             MecanumDriveSubsystem(mecanum, gyro, leds)
         }
+    }
+
+    private fun registerPathplannerEvents() {
+        NamedCommands.registerCommand(
+            "OctupleLaunch",
+            Commands.sequence(
+                launcher.pulseCommand(2.0),
+            )
+        )
+        NamedCommands.registerCommand("Intake",Intake.INTAKE_COMMAND.withTimeout(2.0))
+        NamedCommands.registerCommand("Lift", pneumatics.extendBothCommand().onlyIf { pneumatics.isSystemEnabled() })
+        NamedCommands.registerCommand("Retract", pneumatics.retractBothCommand().onlyIf { pneumatics.isSystemEnabled() })
+        NamedCommands.registerCommand("Align", (drivetrain as? SwerveDriveSubsystem)?.autoAlignCommand())
     }
 
     val speeds = drivetrain.getChassisSpeeds() // Ensure your Drivetrain interface has this
@@ -187,7 +179,6 @@ object RobotContainer {
         SimHooks.init()
         configureBindings()
     }
-
     private fun configureBindings() {
 
         val xLimiter = SlewRateLimiter(5.0)   // m/s^2 style feel
@@ -199,28 +190,15 @@ object RobotContainer {
             return (db * db).withSign(db) // square for finer control near center
         }
 
-        if (robotType == RobotType.MECANUM) {
-            drivetrain.defaultCommand =  driveCommand(
-                drivetrain,
-                { xLimiter.calculate(shapedAxis(-controller.leftY)) },
-                { yLimiter.calculate(shapedAxis(-controller.leftX)) },
-                { rotLimiter.calculate(shapedAxis(-controller.rightX)) },
-                { false }
-            )
-        } else if (robotType == RobotType.SWERVE){
-            val maxV = drivetrain.maxLinearSpeedMps
-            val maxW = drivetrain.maxAngularSpeedRadPerSec
-            drivetrain.defaultCommand =
-                driveCommand(
-                drivetrain,
-                { xLimiter.calculate(shapedAxis(-controller.leftY)) * maxV},
-                { yLimiter.calculate(shapedAxis(-controller.leftX)) * maxV },
-                { rotLimiter.calculate(shapedAxis(-controller.rightX)) * maxW},
-                { true }
-            )
-            (drivetrain as? SwerveDriveSubsystem)?.let { swerve ->
-                controller.a().whileTrue(swerve.PARK_COMMAND)
-            }
+        drivetrain.defaultCommand = drivetrain.run { drivetrain.drive(
+            shapedAxis(-controller.leftY),
+            shapedAxis(-controller.leftX),
+            shapedAxis(-controller.rightX),
+            false
+        )}
+
+        if (drivetrain is SwerveDriveSubsystem) {
+            controller.y().whileTrue(drivetrain.PARK_COMMAND)
         }
 
 
@@ -264,8 +242,15 @@ object RobotContainer {
             Commands.runOnce({ pneumatics.setSystemEnabled(true) }, pneumatics)
         )
 
-        controller.rightBumper().onTrue(Commands.runOnce({ pneumatics.smartExtend() }, pneumatics))
-        controller.leftBumper().onTrue(Commands.runOnce({ pneumatics.smartRetract() }, pneumatics))
+        controller.rightBumper().onTrue(Commands.runOnce({ pneumatics.smartExtend() }, pneumatics).onlyIf { pneumatics.isSystemEnabled() })
+        controller.leftBumper().onTrue(Commands.runOnce({ pneumatics.smartRetract() }, pneumatics).onlyIf { pneumatics.isSystemEnabled() })
+        controller.a().toggleOnTrue(
+            Commands.startEnd(
+                { pneumatics.setSystemEnabled(true) },  // When toggled ON
+                { pneumatics.setSystemEnabled(false) }, // When toggled OFF
+                pneumatics
+            ).ignoringDisable(true)
+        )
 
         controller.x().onTrue(
             Commands.runOnce({
@@ -280,8 +265,10 @@ object RobotContainer {
             pneumatics.retractBoth() // Extra safety: retract when disabling
         }, pneumatics).ignoringDisable(true)
 
-        controller.b().whileTrue(hinge.manualUpCommand())
-        controller.y().whileTrue(hinge.manualDownCommmand())
+        controller.povUp().whileTrue(hinge.manualUpCommand())
+        controller.povDown().whileTrue(hinge.manualDownCommand())
+        controller.povLeft().whileTrue(hinge.stopCommand())
+        controller.b().whileTrue(drivetrain.aimAtTargetCommand())
     }
 
     // -- Simulation --

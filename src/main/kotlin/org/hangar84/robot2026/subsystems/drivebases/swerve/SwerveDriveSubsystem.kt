@@ -10,19 +10,11 @@ import edu.wpi.first.hal.FRCNetComm
 import edu.wpi.first.hal.HAL
 import edu.wpi.first.math.VecBuilder
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator
-import edu.wpi.first.math.geometry.Pose2d
-import edu.wpi.first.math.geometry.Rotation2d
-import edu.wpi.first.math.geometry.Rotation3d
-import edu.wpi.first.math.geometry.Transform3d
-import edu.wpi.first.math.geometry.Translation2d
-import edu.wpi.first.math.geometry.Translation3d
-import edu.wpi.first.math.kinematics.ChassisSpeeds
-import edu.wpi.first.math.kinematics.SwerveDriveKinematics
-import edu.wpi.first.math.kinematics.SwerveDriveOdometry
-import edu.wpi.first.math.kinematics.SwerveModulePosition
-import edu.wpi.first.math.kinematics.SwerveModuleState
+import edu.wpi.first.math.geometry.*
+import edu.wpi.first.math.kinematics.*
 import edu.wpi.first.networktables.NetworkTableInstance
 import edu.wpi.first.units.Units
+import edu.wpi.first.units.Units.Degrees
 import edu.wpi.first.wpilibj.DriverStation
 import edu.wpi.first.wpilibj.RobotBase
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser
@@ -33,36 +25,58 @@ import org.hangar84.robot2026.RobotContainer
 import org.hangar84.robot2026.io.interfaces.drivebaseio.GyroIO
 import org.hangar84.robot2026.io.interfaces.drivebaseio.SwerveIO
 import org.hangar84.robot2026.subsystems.drivebases.Drivetrain
+import org.hangar84.robot2026.subsystems.drivebases.swerve.configs.MAXSwerveModule
+import org.hangar84.robot2026.subsystems.drivebases.swerve.configs.SwerveConfigs
 import org.hangar84.robot2026.subsystems.leds.LedSubsystem
 import org.hangar84.robot2026.telemetry.TelemetryRouter
 import org.photonvision.EstimatedRobotPose
 import org.photonvision.PhotonCamera
 import org.photonvision.PhotonPoseEstimator
+import org.photonvision.targeting.PhotonPipelineResult
 import kotlin.jvm.optionals.getOrNull
+import kotlin.math.abs
 
 class SwerveDriveSubsystem(
-    private val swerveIO: SwerveIO,
     private val gyroIO: GyroIO,
     private val leds: LedSubsystem
-): Drivetrain() {
-
+) : Drivetrain() {
     companion object {
         internal val MAX_SPEED = Units.MetersPerSecond.of(4.8)
         internal val MAX_ANGULAR_SPEED = Units.RotationsPerSecond.of(1.0)
     }
 
+    // - Swerve Modules -
+
+    private val frontRightModule =
+        MAXSwerveModule(1, 2, Degrees.of(0.0), SwerveConfigs.drivingConfig, SwerveConfigs.turningConfig)
+    private val frontLeftModule =
+        MAXSwerveModule(3, 4, Degrees.of(270.0), SwerveConfigs.drivingConfig, SwerveConfigs.turningConfig)
+    private val rearRightModule =
+        MAXSwerveModule(5, 6, Degrees.of(90.0), SwerveConfigs.drivingConfig, SwerveConfigs.turningConfig)
+    private val rearLeftModule =
+        MAXSwerveModule(7, 8, Degrees.of(180.0), SwerveConfigs.drivingConfig, SwerveConfigs.turningConfig)
+
+    private val allModules
+        get() = arrayOf(frontLeftModule, frontRightModule, rearLeftModule, rearRightModule)
+    private val allModulePositions: Array<SwerveModulePosition>
+        get() = allModules.map { it.position }.toTypedArray()
+    private val allModuleStates: Array<SwerveModuleState>
+        get() = allModules.map { it.state }.toTypedArray()
+
+
     private val isSim = RobotBase.isSimulation()
     private val gyroInputs = GyroIO.Inputs()
+
     private val swerveInputs = SwerveIO.Inputs()
 
     private val anyDriveModuleFaulted =
         swerveInputs.fl.driveFaulted ||
-        swerveInputs.fr.driveFaulted ||
-        swerveInputs.rl.driveFaulted ||
-        swerveInputs.rr.driveFaulted
+                swerveInputs.fr.driveFaulted ||
+                swerveInputs.rl.driveFaulted ||
+                swerveInputs.rr.driveFaulted
 
     private val anyTurnModuleFaulted =
-                swerveInputs.fl.turnFaulted ||
+        swerveInputs.fl.turnFaulted ||
                 swerveInputs.fr.turnFaulted ||
                 swerveInputs.rl.turnFaulted ||
                 swerveInputs.rr.turnFaulted
@@ -82,14 +96,9 @@ class SwerveDriveSubsystem(
         Translation2d(-WHEEL_BASE_M / 2.0, -TRACK_WIDTH_M / 2.0)
     )
 
-    private val zeroPositions = arrayOf(
-        SwerveModulePosition(), SwerveModulePosition(),
-        SwerveModulePosition(), SwerveModulePosition()
-    )
-
-    internal var odometry = SwerveDriveOdometry(kinematics, Rotation2d(), zeroPositions)
+    internal var odometry = SwerveDriveOdometry(kinematics, Rotation2d(), modulePositionsFromInputs())
     internal var poseEstimator = SwerveDrivePoseEstimator(
-        kinematics, Rotation2d(), zeroPositions, Pose2d(),
+        kinematics, Rotation2d(), modulePositionsFromInputs(), Pose2d(),
         VecBuilder.fill(0.1, 0.1, 0.1), VecBuilder.fill(1.0, 1.0, 1.0)
     )
 
@@ -97,28 +106,97 @@ class SwerveDriveSubsystem(
     private val camera = PhotonCamera("FrontCamera")
     private val fieldLayout = AprilTagFieldLayout.loadField(AprilTagFields.k2026RebuiltAndymark)
     private val cameraOffset = Transform3d(
-        Translation3d(Units.Inches.of(-8.0), Units.Inches.of(9.0), Units.Inches.of(12.0)),
+        Translation3d(
+            Units.Inches.of(-8.0).`in`(Units.Meters),
+            Units.Inches.of(9.0).`in`(Units.Meters),
+            Units.Inches.of(12.0).`in`(Units.Meters)
+        ),
         Rotation3d(0.0, 0.0, 0.0)
     )
     private val photonEstimator = PhotonPoseEstimator(fieldLayout, cameraOffset)
 
-    private val estimatedRobotPose: EstimatedRobotPose?
-        get() = camera.allUnreadResults
-            .asSequence()
-            .mapNotNull { photonEstimator.estimateLowestAmbiguityPose(it).getOrNull() }
-            .firstOrNull()
+    private val autoCorrectDistanceM = 1.2
+    private val autoCorrectXKp = 0.8
+    private val autoCorrectYKp = 1.2
+    private val autoCorrectOmegaKp = 0.04
+
+    private fun clamp(value: Double, magnitude: Double): Double = value.coerceIn(-magnitude, magnitude)
+
+    private fun estimatedRobotPoses(): List<EstimatedRobotPose> {
+        return camera.allUnreadResults
+            .mapNotNull { result -> photonEstimator.estimateLowestAmbiguityPose(result).orElse(null) }
+    }
 
     private var commandedSpeeds = ChassisSpeeds()
 
+    fun driveRobotCentric(speeds: ChassisSpeeds) {
+        val swerveStates = kinematics.toSwerveModuleStates(speeds)
+        SwerveDriveKinematics.desaturateWheelSpeeds(swerveStates, maxLinearSpeedMps)
+        allModules.forEachIndexed { i, module -> module.desiredState = swerveStates[i] }
+    }
+
+    fun getLatestVisionResult(): PhotonPipelineResult? {
+        return camera.allUnreadResults.lastOrNull()
+    }
     // -- Static Commands --
+
+    fun autoAlignCommand(): Command {
+        return Commands.run({
+            val result = getLatestVisionResult()
+            if (result != null && result.hasTargets()) {
+                val yaw = result.bestTarget.yaw
+                // Simple P-loop for rotation
+                val rotationSpeed = -yaw * 0.05
+                driveRobotCentric(ChassisSpeeds(0.0, 0.0, rotationSpeed))
+            }
+        }, this)
+            .until {
+                val result = getLatestVisionResult()
+                result != null && result.hasTargets() && abs(result.bestTarget.yaw) < 1.5
+            }
+            // Safety: If we don't see the target, don't get stuck forever
+            .withTimeout(5.0)
+            .andThen(Commands.runOnce({ driveRobotCentric(ChassisSpeeds()) }, this))
+    }
+
+    override fun aimAtTargetCommand(): Command = Commands.run({
+        val result = getLatestVisionResult()
+        if (result != null && result.hasTargets()) {
+            val target = result.bestTarget
+            val yawDegrees = target.yaw
+
+            val cameraToTarget = target.bestCameraToTarget
+            val rangeErrorMeters = cameraToTarget.x - autoCorrectDistanceM
+            val lateralErrorMeters = cameraToTarget.y
+
+            if (abs(yawDegrees) > 1.0 ||
+                abs(rangeErrorMeters) > 0.05 ||
+                abs(lateralErrorMeters) > 0.05
+            ) {
+                val xSpeed = clamp(-rangeErrorMeters * autoCorrectXKp, 1.25)
+                val ySpeed = clamp(-lateralErrorMeters * autoCorrectYKp, 1.25)
+                val rotationSpeed = clamp(-yawDegrees * autoCorrectOmegaKp, 1.5)
+
+                driveRobotCentric(ChassisSpeeds(xSpeed, ySpeed, rotationSpeed))
+            } else {
+                driveRobotCentric(ChassisSpeeds(0.0, 0.0, 0.0))
+            }
+        } else {
+            driveRobotCentric(ChassisSpeeds(0.0, 0.0, 0.0))
+        }
+    }, this).finallyDo { interrupted ->
+        // The 'interrupted' boolean is required by the finallyDo signature
+        driveRobotCentric(ChassisSpeeds(0.0, 0.0, 0.0))
+    }
+
     internal val PARK_COMMAND: Command = Commands.run({
-        val states = arrayOf(
+        val swerveStates = arrayOf(
             SwerveModuleState(0.0, Rotation2d.fromDegrees(45.0)),
             SwerveModuleState(0.0, Rotation2d.fromDegrees(-45.0)),
             SwerveModuleState(0.0, Rotation2d.fromDegrees(-45.0)),
             SwerveModuleState(0.0, Rotation2d.fromDegrees(45.0)),
         )
-        swerveIO.setModuleStates(states[0], states[1], states[2], states[3])
+        allModules.forEachIndexed { i, module -> module.desiredState = swerveStates[i] }
     }, this)
 
     private val DRIVE_FORWARD_COMMAND: Command = Commands.run(
@@ -162,7 +240,7 @@ class SwerveDriveSubsystem(
         TelemetryRouter.setBase(if (isSim) "${RobotContainer.robotType.name}/Sim" else RobotContainer.robotType.name)
 
         gyroIO.updateInputs(gyroInputs)
-        swerveIO.updateInputs(swerveInputs)
+        // swerveIO.updateInputs(swerveInputs)  TODO
 
         val positions = modulePositionsFromInputs()
         odometry.update(getHeading(), positions)
@@ -170,10 +248,24 @@ class SwerveDriveSubsystem(
 
         // Vision Updates (Real World Only)
         if (!isSim) {
-            estimatedRobotPose?.let { estimate ->
-                SmartDashboard.putBoolean("Swerve/Vision/HasEstimate", true)
-                poseEstimator.addVisionMeasurement(estimate.estimatedPose.toPose2d(), estimate.timestampSeconds)
-            } ?: SmartDashboard.putBoolean("Swerve/Vision/HasEstimate", false)
+            val estimates = estimatedRobotPoses()
+            SmartDashboard.putBoolean("Swerve/Vision/HasEstimate", estimates.isNotEmpty())
+
+            estimates.forEach { estimate ->
+                val distanceToEstimate =
+                    estimate.estimatedPose.toPose2d().translation.getDistance(poseEstimator.estimatedPosition.translation)
+
+                val measurementNoise = VecBuilder.fill(
+                    0.3 + (distanceToEstimate * 0.3),
+                    0.3 + (distanceToEstimate * 0.3),
+                    0.5 + (distanceToEstimate * 0.5)
+                )
+                poseEstimator.addVisionMeasurement(
+                    estimate.estimatedPose.toPose2d(),
+                    estimate.timestampSeconds,
+                    measurementNoise
+                )
+            }
         }
 
         publishSwerveTelemetry()
@@ -222,6 +314,7 @@ class SwerveDriveSubsystem(
             TelemetryRouter.SwerveDrive.power(
                 "${names[i]} Drive Amps",
                 "${names[i]} Volts",
+                swerveInputs,
                 i
             )
         }
@@ -236,28 +329,34 @@ class SwerveDriveSubsystem(
         )
     }
 
-    override fun drive(xSpeed: Double, ySpeed: Double, rot: Double, fieldRelative: Boolean) {
+    override fun drive(xThrottle: Double, yThrottle: Double, rot: Double, fieldRelative: Boolean) {
+        val xSpeed = MAX_SPEED * xThrottle
+        val ySpeed = MAX_SPEED * yThrottle
+        val rotSpeed = MAX_ANGULAR_SPEED * rot
+
         commandedSpeeds = if (fieldRelative) {
-            ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, rot, getHeading())
+            ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, rotSpeed, getHeading())
         } else {
-            ChassisSpeeds(xSpeed, ySpeed, rot)
+            ChassisSpeeds(xSpeed, ySpeed, rotSpeed)
         }
         if (isSim) gyroIO.setSimOmegaRadPerSec(commandedSpeeds.omegaRadiansPerSecond)
 
-        val states = kinematics.toSwerveModuleStates(commandedSpeeds)
-        SwerveDriveKinematics.desaturateWheelSpeeds(states, maxLinearSpeedMps)
-        swerveIO.setModuleStates(states[0], states[1], states[2], states[3])
+        val swerveStates = kinematics.toSwerveModuleStates(commandedSpeeds)
+        SwerveDriveKinematics.desaturateWheelSpeeds(swerveStates, maxLinearSpeedMps)
+        allModules.forEachIndexed { i, module -> module.desiredState = swerveStates[i] }
     }
 
     fun driveRelative(chassisSpeeds: ChassisSpeeds) {
         commandedSpeeds = chassisSpeeds
-        val states = kinematics.toSwerveModuleStates(chassisSpeeds)
-        SwerveDriveKinematics.desaturateWheelSpeeds(states, maxLinearSpeedMps)
-        swerveIO.setModuleStates(states[0], states[1], states[2], states[3])
+        val swerveStates = kinematics.toSwerveModuleStates(chassisSpeeds)
+        SwerveDriveKinematics.desaturateWheelSpeeds(swerveStates, maxLinearSpeedMps)
+        allModules.forEachIndexed { i, module -> module.desiredState = swerveStates[i] }
     }
 
     override fun buildAutoChooser(): SendableChooser<Command> {
-        val robotConfig = try { RobotConfig.fromGUISettings() } catch (_: Exception) {
+        val robotConfig = try {
+            RobotConfig.fromGUISettings()
+        } catch (_: Exception) {
             return SendableChooser<Command>().apply { setDefaultOption("Drive Forward", DRIVE_FORWARD_COMMAND) }
         }
 
@@ -278,7 +377,7 @@ class SwerveDriveSubsystem(
 
     override fun simulationPeriodic(dtSeconds: Double) {
         if (!isSim) return
-        swerveIO.simulationPeriodic(dtSeconds)
+        // swerveIO.simulationPeriodic(dtSeconds)  TODO
         gyroIO.simulationPeriodic(dtSeconds)
     }
 }
