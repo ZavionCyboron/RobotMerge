@@ -77,8 +77,8 @@ data class Swerve(
 
     val frontLeftChassisOffsetDeg: Double = 270.0,
     val frontRightChassisOffsetDeg: Double = 0.0,
-    val rearLeftChassisOffsetDeg: Double = 90.0,
-    val rearRightChassisOffsetDeg: Double = 180.0,
+    val rearLeftChassisOffsetDeg: Double = 180.0,
+    val rearRightChassisOffsetDeg: Double = 90.0,
     val rearRightTurningEncoderInverted: Boolean = false,
     val rearRightDriveInverted: Boolean = false,
     val frontRightDriveInverted: Boolean = false,

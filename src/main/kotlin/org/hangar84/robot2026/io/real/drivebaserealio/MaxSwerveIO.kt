@@ -17,21 +17,21 @@ class MaxSwerveIO(cfg: Swerve, maxcfg: MaxConfig) : SwerveIO {
     private val fl: MAXSwerveModule = MAXSwerveModule(
         cfg.frontLeftDrivingId,
         cfg.frontLeftTurningId,
-        Degrees.of(270.0),
+        Degrees.of(cfg.frontLeftChassisOffsetDeg),
         drivingConfig,
         turningConfig
     )
     private val fr: MAXSwerveModule = MAXSwerveModule(
         cfg.frontRightDrivingId,
         cfg.frontRightTurningId,
-        Degrees.of(0.0),
+        Degrees.of(cfg.frontRightChassisOffsetDeg),
         drivingConfig,
         turningConfig
     )
     private val rl: MAXSwerveModule = MAXSwerveModule(
         cfg.rearLeftDrivingId,
         cfg.rearLeftTurningId,
-        Degrees.of(90.0),
+        Degrees.of(cfg.rearLeftChassisOffsetDeg),
         drivingConfig,
         turningConfig
     )
@@ -39,7 +39,7 @@ class MaxSwerveIO(cfg: Swerve, maxcfg: MaxConfig) : SwerveIO {
     private val rr: MAXSwerveModule = MAXSwerveModule(
         cfg.rearRightDrivingId,
         cfg.rearRightTurningId,
-        Degrees.of(180.0),
+        Degrees.of(cfg.rearRightChassisOffsetDeg ),
         drivingConfig,
         turningConfig
     )

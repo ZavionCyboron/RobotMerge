@@ -17,8 +17,10 @@ import org.hangar84.robot2026.constants.ConfigLoader
 import org.hangar84.robot2026.constants.RobotType
 import org.hangar84.robot2026.io.interfaces.drivebaseio.GyroIO
 import org.hangar84.robot2026.io.interfaces.drivebaseio.MecanumIO
+import org.hangar84.robot2026.io.interfaces.drivebaseio.SwerveIO
 import org.hangar84.robot2026.io.interfaces.mechanismio.PneumaticsIO
 import org.hangar84.robot2026.io.real.drivebaserealio.AdisGyroIO
+import org.hangar84.robot2026.io.real.drivebaserealio.MaxSwerveIO
 import org.hangar84.robot2026.io.real.drivebaserealio.RevMecanumIO
 import org.hangar84.robot2026.io.real.ledrealio.LedIOLumynUsb
 import org.hangar84.robot2026.io.real.mechanismrealio.RevHingeIO
@@ -27,6 +29,7 @@ import org.hangar84.robot2026.io.real.mechanismrealio.RevLauncherIO
 import org.hangar84.robot2026.io.real.mechanismrealio.RevPneumaticsIO
 import org.hangar84.robot2026.io.sim.simdrivebaseio.SimGyroIO
 import org.hangar84.robot2026.io.sim.simdrivebaseio.SimMecanumIO
+import org.hangar84.robot2026.io.sim.simdrivebaseio.SimSwerveIO
 import org.hangar84.robot2026.io.sim.simmechanismio.SimHingeIO
 import org.hangar84.robot2026.io.sim.simmechanismio.SimIntakeIO
 import org.hangar84.robot2026.io.sim.simmechanismio.SimLauncherIO
@@ -54,6 +57,7 @@ import kotlin.math.withSign
 object RobotContainer {
     private const val DRIVEDEADBAND = 0.08
     private val controller: CommandXboxController = CommandXboxController(0)
+    private val secondController: CommandXboxController = CommandXboxController(1)
     private val buttonA = DigitalInput(19)
 
     private fun readBootSelector(): RobotType {
@@ -78,9 +82,9 @@ object RobotContainer {
     val launcher = LauncherSubsystem(
         if (RobotBase.isSimulation()) SimLauncherIO() else RevLauncherIO(sharedCfg.launcher, sharedCfg.max_config)
     )
-    val hinge = HingeSubsystem(
-        if (isSim) SimHingeIO() else RevHingeIO(sharedCfg.hinge, sharedCfg.max_config)
-    )
+    //val hinge = HingeSubsystem(
+    //    if (isSim) SimHingeIO() else RevHingeIO(sharedCfg.hinge, sharedCfg.max_config)
+    //)
     val Intake = IntakeSubsystem(
         if (RobotBase.isSimulation()) SimIntakeIO() else RevIntakeIO(sharedCfg.intake, sharedCfg.max_config)
     )
@@ -107,12 +111,12 @@ object RobotContainer {
             val gyro: GyroIO = if (isSim) SimGyroIO() else AdisGyroIO().apply {
                 setYawAdjustmentDegrees(90.0)
             }
-            // val swerve: SwerveIO = if (isSim) SimSwerveIO() else MaxSwerveIO(robotCfg.swerve!!, sharedCfg.max_config)
+            val swerve: SwerveIO = if (isSim) SimSwerveIO() else MaxSwerveIO(robotCfg.swerve!!, sharedCfg.max_config)
             SmartDashboard.putNumber("Front Left Offsets", robotCfg.swerve!!.frontLeftChassisOffsetDeg)
             SmartDashboard.putNumber("Front Right Offsets", robotCfg.swerve.frontRightChassisOffsetDeg)
             SmartDashboard.putNumber("Rear Left Offsets", robotCfg.swerve.rearLeftChassisOffsetDeg)
             SmartDashboard.putNumber("Rear Right Offsets", robotCfg.swerve.rearRightChassisOffsetDeg)
-            SwerveDriveSubsystem(gyro, leds)
+            SwerveDriveSubsystem(gyro, swerve, leds)
         }
 
         RobotType.MECANUM -> {
@@ -242,9 +246,9 @@ object RobotContainer {
             Commands.runOnce({ pneumatics.setSystemEnabled(true) }, pneumatics)
         )
 
-        controller.rightBumper().onTrue(Commands.runOnce({ pneumatics.smartExtend() }, pneumatics).onlyIf { pneumatics.isSystemEnabled() })
-        controller.leftBumper().onTrue(Commands.runOnce({ pneumatics.smartRetract() }, pneumatics).onlyIf { pneumatics.isSystemEnabled() })
-        controller.a().toggleOnTrue(
+        secondController.rightBumper().onTrue(Commands.runOnce({ pneumatics.smartExtend() }, pneumatics).onlyIf { pneumatics.isSystemEnabled() })
+        secondController.leftBumper().onTrue(Commands.runOnce({ pneumatics.smartRetract() }, pneumatics).onlyIf { pneumatics.isSystemEnabled() })
+        secondController.a().toggleOnTrue(
             Commands.startEnd(
                 { pneumatics.setSystemEnabled(true) },  // When toggled ON
                 { pneumatics.setSystemEnabled(false) }, // When toggled OFF
@@ -252,22 +256,22 @@ object RobotContainer {
             ).ignoringDisable(true)
         )
 
-        controller.x().onTrue(
+        secondController.x().onTrue(
             Commands.runOnce({
                 pneumatics.cycleSelection()
-                controller.hid.setRumble(GenericHID.RumbleType.kBothRumble, 0.5)
+                secondController.hid.setRumble(GenericHID.RumbleType.kBothRumble, 0.5)
             }, pneumatics)
                 .andThen(Commands.waitSeconds(0.2))
-                .finallyDo { _ -> controller.hid.setRumble(GenericHID.RumbleType.kBothRumble, 0.0) }
+                .finallyDo { _ -> secondController.hid.setRumble(GenericHID.RumbleType.kBothRumble, 0.0) }
         )
         Commands.runOnce({
             pneumatics.setSystemEnabled(false)
             pneumatics.retractBoth() // Extra safety: retract when disabling
         }, pneumatics).ignoringDisable(true)
 
-        controller.povUp().whileTrue(hinge.manualUpCommand())
-        controller.povDown().whileTrue(hinge.manualDownCommand())
-        controller.povLeft().whileTrue(hinge.stopCommand())
+        //secondController.povUp().whileTrue(hinge.manualUpCommand())
+        //secondController.povDown().whileTrue(hinge.manualDownCommand())
+        //secondController.povLeft().whileTrue(hinge.stopCommand())
         controller.b().whileTrue(drivetrain.aimAtTargetCommand())
     }
 

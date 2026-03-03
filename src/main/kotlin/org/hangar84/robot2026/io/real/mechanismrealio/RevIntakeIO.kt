@@ -18,10 +18,11 @@ class RevIntakeIO(cfg: Intake, maxcfg: MaxConfig) : IntakeIO {
     init {
         val leftconfig = SparkMaxConfig().apply {
             smartCurrentLimit(currentLimit) // 30 amps
-                .inverted(invertedTrue) // true
+
         }
         val rightConfig = SparkMaxConfig().apply{
             smartCurrentLimit(currentLimit)
+                .follow(leftIntake)
         }
         leftIntake.configure(leftconfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters)
         rightIntake.configure(rightConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters)

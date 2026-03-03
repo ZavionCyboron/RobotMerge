@@ -3,13 +3,13 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 0.3903566333808842,
-        "y": 6.16590361445783
+        "x": 1.0243509272467899,
+        "y": 5.969329529243937
       },
       "prevControl": null,
       "nextControl": {
-        "x": 0.7477056296487178,
-        "y": 6.071529604792292
+        "x": 1.3735242533197387,
+        "y": 5.755615918738652
       },
       "isLocked": false,
       "linkedName": "Intake "
@@ -20,8 +20,8 @@
         "y": 4.00265335235378
       },
       "prevControl": {
-        "x": 2.2923395149786003,
-        "y": 4.026036471134183
+        "x": 2.687164697921967,
+        "y": 4.661073662544573
       },
       "nextControl": null,
       "isLocked": false,
@@ -54,7 +54,7 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": 0.0
+    "rotation": -178.58557678859785
   },
   "reversed": false,
   "folder": null,

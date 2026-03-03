@@ -1,18 +1,18 @@
 {
   "robotType": {
     "swerve": {
-      "frontLeftDrivingId": 7,
-      "frontLeftTurningId": 8,
-      "frontRightDrivingId": 5,
-      "frontRightTurningId": 6,
-      "rearLeftDrivingId": 1,
-      "rearLeftTurningId": 2,
-      "rearRightDrivingId": 3,
-      "rearRightTurningId": 4,
+      "frontLeftDrivingId": 3,
+      "frontLeftTurningId": 4,
+      "frontRightDrivingId": 1,
+      "frontRightTurningId": 2,
+      "rearLeftDrivingId": 7,
+      "rearLeftTurningId": 8,
+      "rearRightDrivingId": 5,
+      "rearRightTurningId": 6,
       "frontLeftChassisOffsetDeg": 270.0,
       "frontRightChassisOffsetDeg": 0.0,
-      "rearLeftChassisOffsetDeg": 90.0,
-      "rearRightChassisOffsetDeg": 180.0,
+      "rearLeftChassisOffsetDeg": 180.0,
+      "rearRightChassisOffsetDeg": 90.0,
       "rearRightTurningEncoderInverted": false,
       "rearRightDriveInverted": false,
       "frontRightDriveInverted": false,
@@ -37,10 +37,10 @@
     },
     "pneumatics": {
       "revPHId": 17,
-      "aExtendChannel": 0,
-      "aRetractChannel": 1,
-      "bExtendChannel": 2,
-      "bRetractChannel": 3
+      "aExtendChannel": 2,
+      "aRetractChannel": 3,
+      "bExtendChannel": 5,
+      "bRetractChannel": 4
     },
     "hinge": {
       "hingeMotorId": 18,
