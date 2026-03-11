@@ -5,10 +5,10 @@ import com.revrobotics.spark.config.SparkBaseConfig.IdleMode
 import com.revrobotics.spark.config.SparkMaxConfig
 
 data object SwerveConfigs {
-    private const val DRIVE_PINION_TEETH = 13
+    private const val DRIVE_PINION_TEETH = 13.0
     private const val WHEEL_DIAMETER = 0.0762
     private const val WHEEL_CIRCUMFERENCE = WHEEL_DIAMETER * Math.PI
-    private const val DRIVING_REDUCTION = (45 * 22) / (DRIVE_PINION_TEETH * 15)
+    private const val DRIVING_REDUCTION = (45.0 * 22.0) / (DRIVE_PINION_TEETH * 15.0)
 
     private const val DRIVING_FACTOR = WHEEL_CIRCUMFERENCE / DRIVING_REDUCTION
     private const val TURNING_FACTOR = 2 * Math.PI
@@ -29,6 +29,10 @@ data object SwerveConfigs {
             .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
             .pid(0.04, 0.0, 0.0) // TODO: Tune these values (if needed)
             .outputRange(-1.0, 1.0)
+        drivingConfig.closedLoop.feedForward
+            .kS(0.2)
+            .kV(0.208)
+            .kA(0.2710927059)
 
         turningConfig
             .idleMode(IdleMode.kBrake)
@@ -41,7 +45,7 @@ data object SwerveConfigs {
 
         turningConfig.closedLoop
             .feedbackSensor(FeedbackSensor.kAbsoluteEncoder)
-            .pid(1.0, 0.0, 0.0) // TODO: Tune these values (if needed)
+            .pid(0.5, 0.0, 0.0) // TODO: Tune these values (if needed)
             .outputRange(-1.0, 1.0)
             .positionWrappingEnabled(true)
             .positionWrappingInputRange(0.0, TURNING_FACTOR)
