@@ -3,25 +3,25 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 2.016629890850153,
-        "y": 7.091500977619833
+        "x": 3.443880171184022,
+        "y": 7.094992867332382
       },
       "prevControl": null,
       "nextControl": {
-        "x": 1.7531647865323978,
-        "y": 7.047775912594131
+        "x": 3.3705266836389485,
+        "y": 6.793250176997309
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 1.0243509272467899,
-        "y": 5.969329529243937
+        "x": 3.2498002853067045,
+        "y": 3.950898716119829
       },
       "prevControl": {
-        "x": 0.8835762645432285,
-        "y": 5.7627321082999705
+        "x": 3.277801140199617,
+        "y": 3.7024717608084816
       },
       "nextControl": null,
       "isLocked": false,
@@ -47,10 +47,15 @@
   "pointTowardsZones": [],
   "eventMarkers": [
     {
-      "name": "Intake",
+      "name": "OctupleLaunch",
       "waypointRelativePos": 1.0,
       "endWaypointRelativePos": null,
-      "command": null
+      "command": {
+        "type": "named",
+        "data": {
+          "name": "OctupleLaunch"
+        }
+      }
     }
   ],
   "globalConstraints": {
@@ -63,13 +68,13 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": 0.0
+    "rotation": 1.5481576989779693
   },
   "reversed": false,
   "folder": null,
   "idealStartingState": {
     "velocity": 0,
-    "rotation": -1.6432275059718073
+    "rotation": 0.0
   },
   "useDefaultConstraints": false
 }

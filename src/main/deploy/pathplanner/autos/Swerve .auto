@@ -7,7 +7,7 @@
         {
           "type": "path",
           "data": {
-            "pathName": "Start To Intake"
+            "pathName": "Start To Hub"
           }
         },
         {
@@ -17,15 +17,15 @@
           }
         },
         {
-          "type": "named",
+          "type": "path",
           "data": {
-            "name": "Intake"
+            "pathName": "Hub To Intake"
           }
         },
         {
-          "type": "wait",
+          "type": "named",
           "data": {
-            "waitTime": 0.75
+            "name": "align"
           }
         },
         {
@@ -38,48 +38,6 @@
           "type": "named",
           "data": {
             "name": "align"
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "OctupleLaunch"
-          }
-        },
-        {
-          "type": "wait",
-          "data": {
-            "waitTime": 0.75
-          }
-        },
-        {
-          "type": "path",
-          "data": {
-            "pathName": "Hub To Climb"
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "align"
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "Lift"
-          }
-        },
-        {
-          "type": "wait",
-          "data": {
-            "waitTime": 5.0
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "Retract"
           }
         }
       ]
