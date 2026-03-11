@@ -158,13 +158,10 @@ class PneumaticsSubsystem(private val io: PneumaticsIO) : SubsystemBase() {
     // ----- Commands (nice for RobotContainer bindings) -----
     fun extendACommand(): Command = Commands.runOnce({ extendA() }, this)
     fun retractACommand(): Command = Commands.runOnce({ retractA() }, this)
-    fun toggleACommand(): Command = Commands.runOnce({ toggleA() }, this)
 
     fun extendBCommand(): Command = Commands.runOnce({ extendB() }, this)
     fun retractBCommand(): Command = Commands.runOnce({ retractB() }, this)
-    fun toggleBCommand(): Command = Commands.runOnce({ toggleB() }, this)
 
     fun extendBothCommand(): Command = Commands.runOnce({ extendBoth() }, this)
     fun retractBothCommand(): Command = Commands.runOnce({ retractBoth() }, this)
-    fun toggleBothCommand(): Command = Commands.runOnce({ toggleBoth() }, this)
 }
