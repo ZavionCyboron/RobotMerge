@@ -39,7 +39,7 @@ class LauncherSubsystem(val io: LauncherIO) : SubsystemBase() {
                 io.setRightPercent(1.0)
             }, this),
 
-            Commands.waitSeconds(.5),
+            Commands.waitSeconds(1.0),
 
             Commands.runOnce({
                 io.setLeftPercent(1.0)
