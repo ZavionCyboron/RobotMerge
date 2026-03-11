@@ -12,7 +12,6 @@ import edu.wpi.first.wpilibj2.command.Command
 import edu.wpi.first.wpilibj2.command.Commands
 import edu.wpi.first.wpilibj2.command.InstantCommand
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController
-import org.hangar84.robot2026.commands.driveCommand
 import org.hangar84.robot2026.constants.ConfigLoader
 import org.hangar84.robot2026.constants.RobotType
 import org.hangar84.robot2026.io.interfaces.drivebaseio.GyroIO
@@ -23,14 +22,12 @@ import org.hangar84.robot2026.io.real.drivebaserealio.AdisGyroIO
 import org.hangar84.robot2026.io.real.drivebaserealio.MaxSwerveIO
 import org.hangar84.robot2026.io.real.drivebaserealio.RevMecanumIO
 import org.hangar84.robot2026.io.real.ledrealio.LedIOLumynUsb
-import org.hangar84.robot2026.io.real.mechanismrealio.RevHingeIO
 import org.hangar84.robot2026.io.real.mechanismrealio.RevIntakeIO
 import org.hangar84.robot2026.io.real.mechanismrealio.RevLauncherIO
 import org.hangar84.robot2026.io.real.mechanismrealio.RevPneumaticsIO
 import org.hangar84.robot2026.io.sim.simdrivebaseio.SimGyroIO
 import org.hangar84.robot2026.io.sim.simdrivebaseio.SimMecanumIO
 import org.hangar84.robot2026.io.sim.simdrivebaseio.SimSwerveIO
-import org.hangar84.robot2026.io.sim.simmechanismio.SimHingeIO
 import org.hangar84.robot2026.io.sim.simmechanismio.SimIntakeIO
 import org.hangar84.robot2026.io.sim.simmechanismio.SimLauncherIO
 import org.hangar84.robot2026.io.sim.simmechanismio.SimPneumaticsIO
@@ -46,7 +43,6 @@ import org.hangar84.robot2026.subsystems.drivebases.Drivetrain
 import org.hangar84.robot2026.subsystems.drivebases.mecanum.MecanumDriveSubsystem
 import org.hangar84.robot2026.subsystems.drivebases.swerve.SwerveDriveSubsystem
 import org.hangar84.robot2026.subsystems.leds.LedSubsystem
-import org.hangar84.robot2026.subsystems.mechanisms.HingeSubsystem
 import org.hangar84.robot2026.subsystems.mechanisms.IntakeSubsystem
 import org.hangar84.robot2026.subsystems.mechanisms.LauncherSubsystem
 import org.hangar84.robot2026.subsystems.mechanisms.PneumaticsSubsystem
@@ -130,13 +126,13 @@ object RobotContainer {
         NamedCommands.registerCommand(
             "OctupleLaunch",
             Commands.sequence(
-                launcher.pulseCommand(2.0),
+                launcher.pulseCommand(10.0)
             )
         )
         NamedCommands.registerCommand("Intake",Intake.INTAKE_COMMAND.withTimeout(2.0))
         NamedCommands.registerCommand("Lift", pneumatics.extendBothCommand().onlyIf { pneumatics.isSystemEnabled() })
         NamedCommands.registerCommand("Retract", pneumatics.retractBothCommand().onlyIf { pneumatics.isSystemEnabled() })
-        NamedCommands.registerCommand("Align", (drivetrain as? SwerveDriveSubsystem)?.autoAlignCommand())
+                NamedCommands.registerCommand("align", (drivetrain as? SwerveDriveSubsystem)?.autoAlignCommand())
     }
 
     val speeds = drivetrain.getChassisSpeeds() // Ensure your Drivetrain interface has this
@@ -198,7 +194,7 @@ object RobotContainer {
             shapedAxis(-controller.leftY),
             shapedAxis(-controller.leftX),
             shapedAxis(-controller.rightX),
-            false
+            true
         )}
 
         if (drivetrain is SwerveDriveSubsystem) {
