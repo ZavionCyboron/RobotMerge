@@ -8,24 +8,24 @@
       },
       "prevControl": null,
       "nextControl": {
-        "x": 2.9527833055262644,
-        "y": 3.9697068074148856
+        "x": 4.291580206309888,
+        "y": 3.442564108674115
       },
-      "isLocked": true,
+      "isLocked": false,
       "linkedName": "Intake "
     },
     {
       "anchor": {
-        "x": 1.4513266761768897,
-        "y": 3.950898716119829
+        "x": 1.1019828815977175,
+        "y": 5.89169757489301
       },
       "prevControl": {
-        "x": 2.655024464849496,
-        "y": 3.9467933171733476
+        "x": 0.025835160404930724,
+        "y": 6.726210969157789
       },
       "nextControl": null,
-      "isLocked": true,
-      "linkedName": null
+      "isLocked": false,
+      "linkedName": "Hub"
     }
   ],
   "rotationTargets": [],
@@ -33,8 +33,8 @@
   "pointTowardsZones": [],
   "eventMarkers": [
     {
-      "name": "Lift",
-      "waypointRelativePos": 0.8993923024983016,
+      "name": "Intake",
+      "waypointRelativePos": 1.0,
       "endWaypointRelativePos": null,
       "command": {
         "type": "sequential",
@@ -43,27 +43,16 @@
             {
               "type": "named",
               "data": {
-                "name": "Lift"
+                "name": "Intake"
               }
             },
             {
               "type": "wait",
               "data": {
-                "waitTime": 1.0
+                "waitTime": 0.5
               }
             }
           ]
-        }
-      }
-    },
-    {
-      "name": "Retract",
-      "waypointRelativePos": 1.0,
-      "endWaypointRelativePos": null,
-      "command": {
-        "type": "named",
-        "data": {
-          "name": "Retract"
         }
       }
     }
@@ -78,7 +67,7 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": -1.1136843757573711
+    "rotation": 178.8308606720926
   },
   "reversed": false,
   "folder": null,
