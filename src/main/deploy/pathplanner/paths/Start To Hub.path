@@ -3,58 +3,37 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 2.016629890850153,
-        "y": 7.091500977619833
+        "x": 3.443880171184022,
+        "y": 7.094992867332382
       },
       "prevControl": null,
       "nextControl": {
-        "x": 1.8854925907279774,
-        "y": 6.863800921357292
+        "x": 3.3705266836389485,
+        "y": 6.793250176997309
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 1.1813193805414475,
-        "y": 6.16590361445783
+        "x": 3.2498002853067045,
+        "y": 3.950898716119829
       },
       "prevControl": {
-        "x": 1.5237302700645938,
-        "y": 6.189533315115996
-      },
-      "nextControl": {
-        "x": 0.8953904718028118,
-        "y": 6.146171722950467
-      },
-      "isLocked": false,
-      "linkedName": null
-    },
-    {
-      "anchor": {
-        "x": 0.3174668230960742,
-        "y": 6.16590361445783
-      },
-      "prevControl": {
-        "x": 0.7201259591153625,
-        "y": 6.22393479062937
+        "x": 3.277801140199617,
+        "y": 3.7024717608084816
       },
       "nextControl": null,
       "isLocked": false,
       "linkedName": "Intake "
     }
   ],
-  "rotationTargets": [
-    {
-      "waypointRelativePos": 0.5,
-      "rotationDegrees": -1.0
-    }
-  ],
+  "rotationTargets": [],
   "constraintZones": [
     {
       "name": "Constraints Zone",
-      "minWaypointRelativePos": 1.4,
-      "maxWaypointRelativePos": 2.0,
+      "minWaypointRelativePos": 0.35,
+      "maxWaypointRelativePos": 0.5,
       "constraints": {
         "maxVelocity": 1.0,
         "maxAcceleration": 1.0,
@@ -68,10 +47,15 @@
   "pointTowardsZones": [],
   "eventMarkers": [
     {
-      "name": "Intake",
-      "waypointRelativePos": 1.5618705035971026,
-      "endWaypointRelativePos": 2.0,
-      "command": null
+      "name": "OctupleLaunch",
+      "waypointRelativePos": 1.0,
+      "endWaypointRelativePos": null,
+      "command": {
+        "type": "named",
+        "data": {
+          "name": "OctupleLaunch"
+        }
+      }
     }
   ],
   "globalConstraints": {
@@ -84,7 +68,7 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": 0.0
+    "rotation": 1.5481576989779693
   },
   "reversed": false,
   "folder": null,

@@ -19,12 +19,12 @@ class RevLauncherIO(cfg: Launcher, maxcfg: MaxConfig) : LauncherIO {
 
     init {
         val rightCfg = SparkMaxConfig().apply {
-            smartCurrentLimit(currentLimit) // 40 amps
+            smartCurrentLimit(currentLimit) // 50 amps
                 .inverted(invertedTrue) // True
 
         }
         val leftCfg = SparkMaxConfig().apply {
-            smartCurrentLimit(currentLimit) // 40 amps
+            smartCurrentLimit(currentLimit) // 50 amps
         }
         leftLaunch.configure(leftCfg, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters)
         rightLaunch.configure(rightCfg, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters)

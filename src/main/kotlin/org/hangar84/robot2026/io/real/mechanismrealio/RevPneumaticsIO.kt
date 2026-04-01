@@ -1,8 +1,9 @@
 package org.hangar84.robot2026.io.real.mechanismrealio
-import edu.wpi.first.wpilibj.PneumaticHub
 import edu.wpi.first.wpilibj.DoubleSolenoid
-import org.hangar84.robot2026.io.interfaces.mechanismio.PneumaticsIO
+import edu.wpi.first.wpilibj.PneumaticHub
 import org.hangar84.robot2026.constants.Pneumatics
+import org.hangar84.robot2026.io.interfaces.mechanismio.PneumaticsIO
+
 
 class RevPneumaticsIO(cfg: Pneumatics) : PneumaticsIO {
 

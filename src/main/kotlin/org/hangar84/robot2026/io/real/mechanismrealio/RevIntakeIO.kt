@@ -18,7 +18,8 @@ class RevIntakeIO(cfg: Intake, maxcfg: MaxConfig) : IntakeIO {
     init {
         val leftconfig = SparkMaxConfig().apply {
             smartCurrentLimit(currentLimit) // 30 amps
-                .inverted(invertedTrue) // true
+                .inverted(invertedTrue)
+
         }
         val rightConfig = SparkMaxConfig().apply{
             smartCurrentLimit(currentLimit)
@@ -35,7 +36,10 @@ class RevIntakeIO(cfg: Intake, maxcfg: MaxConfig) : IntakeIO {
 
     override fun updateInputs(inputs: IntakeIO.Inputs) {
         inputs.leftAppliedOutput = leftIntake.appliedOutput
+        inputs.rightAppliedOutput = rightIntake.appliedOutput
         inputs.leftCurrentAmps = leftIntake.outputCurrent
+        inputs.rightCurrentAmps = rightIntake.outputCurrent
         inputs.leftTempCelcius = leftIntake.motorTemperature
+        inputs.rightTempCelcius = rightIntake.motorTemperature
     }
 }

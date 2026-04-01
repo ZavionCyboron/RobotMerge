@@ -13,7 +13,7 @@ class LedIOLumynUsb(
     private val groupBase: String = "base",
     private val groupIntake: String = "intake",
     private val groupLauncher: String = "launcher",
-    private val groupNull: String = ""
+    private val groupALL: String = "all",
 ) : LedIO {
 
     private val cx = ConnectorXAnimate()
@@ -24,7 +24,7 @@ class LedIOLumynUsb(
         LedTarget.BASE -> groupBase
         LedTarget.INTAKE ->  groupIntake
         LedTarget.LAUNCHER -> groupLauncher
-        LedTarget.NULL -> groupNull
+        LedTarget.ALL -> groupALL
     }
 
     override fun connect() {
@@ -46,7 +46,7 @@ class LedIOLumynUsb(
         cx.leds.SetGroupColor(groupId(target), color)
     }
 
-    override fun setOff() = setSolid(LedTarget.NULL, Color(0.0, 0.0, 0.0))
+    override fun setOff() = setSolid(LedTarget.BASE, Color(0.0, 0.0, 0.0))
 
     override fun setBreathe(target: LedTarget, color: Color, periodMs: Int) {
         sendOnce("breathe:${color.red}:${color.green}:${color.blue}:$periodMs") {

@@ -33,6 +33,9 @@ interface SwerveIO {
         var driveTempC: Double = 0.0,
         var turnTempC: Double = 0.0,
 
+        var turnAppliedVolts: Double = 0.0,
+        var turnCurrentAmps: Double = 0.0,
+
         val health: ModuleHealth = ModuleHealth()
     )
 

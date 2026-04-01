@@ -56,8 +56,12 @@ class IntakeSubsystem(val io: IntakeIO) : SubsystemBase() {
 
         Intake.intake(
             inputs.leftAppliedOutput,
+            inputs.rightAppliedOutput,
             inputs.leftCurrentAmps,
-            inputs.leftTempCelcius
+            inputs.rightCurrentAmps,
+            inputs.leftTempCelcius,
+            inputs.rightTempCelcius,
+            Intake.getIntakeSpeed()
         )
     }
 }
